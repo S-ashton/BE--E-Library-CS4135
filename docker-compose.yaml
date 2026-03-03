@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+
+  config-server:
+    build: ./config-server
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    networks:
+      - elibrary-network
+
+  discovery-server:
+    build: ./discovery-server
+    container_name: discovery-server
+    ports:
+      - "8761:8761"
+    depends_on:
+      - config-server
+    networks:
+      - elibrary-network
+
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - config-server
+      - discovery-server
+    networks:
+      - elibrary-network
+
+  # book-service:
+  # loan-service:
+  # recommendation-service:
+  # api-gateway:
+
+networks:
+  elibrary-network:
+    driver: bridge
