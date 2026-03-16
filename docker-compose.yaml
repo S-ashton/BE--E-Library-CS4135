@@ -1,18 +1,22 @@
-version: "3.9"
-
 services:
 
   config-server:
     build: ./config-server
     container_name: config-server
+    restart: unless-stopped
     ports:
       - "8888:8888"
+    volumes:
+      - ./config-repo:/config-repo:ro
+    environment:
+      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS: file:/config-repo
     networks:
       - elibrary-network
 
   discovery-server:
     build: ./discovery-server
     container_name: discovery-server
+    restart: unless-stopped
     ports:
       - "8761:8761"
     depends_on:
@@ -23,8 +27,12 @@ services:
   user-service:
     build: ./user-service
     container_name: user-service
+    restart: unless-stopped
     ports:
       - "8081:8081"
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
     depends_on:
       - config-server
       - discovery-server
@@ -34,17 +42,69 @@ services:
   book-service:
     build: ./book-service
     container_name: book-service
+    restart: unless-stopped
     ports:
       - "8082:8082"
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
     depends_on:
       - config-server
       - discovery-server
+      - user-service
     networks:
       - elibrary-network
 
-  # loan-service:
-  # recommendation-service:
-  # api-gateway:
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
+    depends_on:
+      - config-server
+      - discovery-server
+      - user-service
+    networks:
+      - elibrary-network
+
+  loan-service:
+    build: ./loan-service
+    container_name: loan-service
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
+    depends_on:
+      - config-server
+      - discovery-server
+      - book-service
+      - user-service
+    networks:
+      - elibrary-network
+
+  recommendation-service:
+    build: ./recommendation-service
+    container_name: recommendation-service
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
+    depends_on:
+      - config-server
+      - discovery-server
+      - book-service
+      - loan-service
+      - user-service
+    networks:
+      - elibrary-network
 
 networks:
   elibrary-network:
