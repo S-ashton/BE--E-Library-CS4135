@@ -1,5 +1,7 @@
 package com.elibrary.user_service.controller;
 
+import com.elibrary.user_service.dto.LoginRequest;
+import com.elibrary.user_service.dto.LoginResponse;
 import com.elibrary.user_service.dto.RegisterRequest;
 import com.elibrary.user_service.dto.UserResponse;
 import com.elibrary.user_service.service.UserService;
@@ -14,7 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-// Handles public authentication endpoints, registration and for login in the future.
+// Handles public authentication endpoints for account creation and login.
 @RestController
 @RequestMapping("/api/v1/auth")
 @Tag(name = "Authentication", description = "Public endpoints for user registration and login")
@@ -42,5 +44,21 @@ public class AuthController {
     public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
         UserResponse response = userService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Operation(
+        summary = "Authenticate a user and issue a JWT",
+        description = "Authenticates with email and password. On success returns a signed JWT and its expiry timestamp."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Login successful",
+            content = @Content(schema = @Schema(implementation = LoginResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Validation failed", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content)
+    })
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse response = userService.login(request);
+        return ResponseEntity.ok(response);
     }
 }

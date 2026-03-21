@@ -5,3 +5,8 @@ spring:
 eureka:
   client:
     enabled: false
+app:
+  jwt:
+    secret: test-jwt-secret-for-user-service-only-1234567890
+    expiration-seconds: 3600
+    issuer: user-service-test
