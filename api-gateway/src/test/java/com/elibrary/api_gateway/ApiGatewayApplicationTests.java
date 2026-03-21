@@ -1,24 +1,36 @@
 package com.elibrary.api_gateway;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.gateway.route.RouteDefinition;
+import org.springframework.cloud.gateway.route.RouteDefinitionLocator;
 import org.springframework.cloud.gateway.route.RouteLocator;
+import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Verifies that the gateway context loads and all expected routes are registered.
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
 class ApiGatewayApplicationTests {
 
 	@Autowired
 	private RouteLocator routeLocator;
 
+	@Autowired
+	private RouteDefinitionLocator routeDefinitionLocator;
+
+	@Autowired
+	private WebTestClient webTestClient;
+
 	@Test
 	void contextLoads() {
-		// Application context starts without errors, config-server and Eureka are disabled in test profile.
 	}
 
 	@Test
@@ -28,7 +40,6 @@ class ApiGatewayApplicationTests {
 				.collectList()
 				.block();
 
-		// Every downstream service must have a corresponding gateway route.
 		assertThat(routeIds).contains(
 				"user-service",
 				"book-service",
@@ -40,7 +51,39 @@ class ApiGatewayApplicationTests {
 	@Test
 	void fourRoutesConfigured() {
 		long count = routeLocator.getRoutes().count().block();
-		// Exactly four services are routed only.
 		assertThat(count).isEqualTo(4);
+	}
+
+	@Test
+	void routeDefinitionsUseExpectedPathPredicates() {
+		Map<String, List<String>> pathPredicatesByRouteId = routeDefinitionLocator.getRouteDefinitions()
+				.collectList()
+				.block()
+				.stream()
+				.collect(Collectors.toMap(
+						RouteDefinition::getId,
+						route -> route.getPredicates().stream()
+								.flatMap(predicate -> predicate.getArgs().values().stream())
+								.map(String::valueOf)
+								.toList()
+				));
+
+		assertThat(pathPredicatesByRouteId.get("user-service"))
+				.containsExactlyInAnyOrder("/api/v1/auth/**", "/api/users/**");
+		assertThat(pathPredicatesByRouteId.get("book-service"))
+				.containsExactly("/api/books/**");
+		assertThat(pathPredicatesByRouteId.get("loan-service"))
+				.containsExactly("/api/loans/**");
+		assertThat(pathPredicatesByRouteId.get("recommendation-service"))
+				.containsExactly("/api/recommendations/**");
+	}
+
+	@Test
+	void invalidRoutesReturn404() {
+		webTestClient.get()
+				.uri("/api/unknown/test")
+				.exchange()
+				.expectStatus()
+				.isNotFound();
 	}
 }

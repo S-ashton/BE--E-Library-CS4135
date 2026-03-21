@@ -9,18 +9,9 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: false
-  h2:
-    console:
-      enabled: false
-
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: false
     properties:
       hibernate:
         format_sql: true
-
   h2:
     console:
       enabled: true

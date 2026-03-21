@@ -6,26 +6,26 @@ spring:
       server:
         webflux:
           routes:
-            # Local dev routes — mirrors config-repo/api-gateway.yaml but without config-server.
+            # Local dev routes
             - id: user-service
               uri: lb://user-service
               predicates:
-                - Path=/api/v1/auth/**,/api/v1/users/**
+                - Path=/api/v1/auth/**,/api/users/**
 
             - id: book-service
               uri: lb://book-service
               predicates:
-                - Path=/api/v1/books/**
+                - Path=/api/books/**
 
             - id: loan-service
               uri: lb://loan-service
               predicates:
-                - Path=/api/v1/loans/**
+                - Path=/api/loans/**
 
             - id: recommendation-service
               uri: lb://recommendation-service
               predicates:
-                - Path=/api/v1/recommendations/**
+                - Path=/api/recommendations/**
 
 server:
   port: 8080
