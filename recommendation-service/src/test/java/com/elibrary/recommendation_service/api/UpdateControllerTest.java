@@ -28,12 +28,12 @@ class UpdateControllerTest {
     void updatesBookAndEmbedsIt() {
         Book book = new Book(1L, "Title", "Desc");
 
-        when(storage.load(eq("books.json"), eq(List.class)))
+        when(storage.load(eq("data/books.json"), eq(List.class)))
                 .thenReturn(new ArrayList<>());
 
         controller.updateBook(book);
 
-        verify(storage).save(eq("books.json"), any());
+        verify(storage).save(eq("data/books.json"), any());
         verify(embeddingCache).addOrUpdateBook(book);
     }
 
@@ -42,12 +42,12 @@ class UpdateControllerTest {
         Map<String, List<String>> loans = new HashMap<>();
         loans.put("user1", new ArrayList<>(List.of("1")));
 
-        when(storage.load(eq("loans.json"), eq(Map.class)))
+        when(storage.load(eq("data/loans.json"), eq(Map.class)))
                 .thenReturn(loans);
 
         controller.updateLoan(Map.of("userId", "user1", "bookId", "2"));
 
-        verify(storage).save(eq("loans.json"), any());
+        verify(storage).save(eq("data/loans.json"), any());
         assertTrue(loans.get("user1").contains("2"));
     }
 }

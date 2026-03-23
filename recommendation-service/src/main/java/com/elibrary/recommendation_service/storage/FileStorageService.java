@@ -13,7 +13,12 @@ public class FileStorageService {
 
     public <T> void save(String filename, T data) {
         try {
-            mapper.writeValue(new File(filename), data);
+            File file = new File(filename);
+            File parent = file.getParentFile();
+            if (parent != null) {
+                parent.mkdirs();
+            }
+            mapper.writeValue(file, data);
         } catch (IOException e) {
             throw new RuntimeException("Failed to save file: " + filename, e);
         }

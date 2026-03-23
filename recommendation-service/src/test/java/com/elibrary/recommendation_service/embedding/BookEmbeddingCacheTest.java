@@ -23,7 +23,7 @@ class BookEmbeddingCacheTest {
         embeddingClient = mock(EmbeddingClient.class);
 
         // Mock existing embeddings
-        when(storage.load(eq("book_embeddings.json"), eq(Map.class)))
+        when(storage.load(eq("data/book_embeddings.json"), eq(Map.class)))
                 .thenReturn(Map.of(
                         "1", List.of(1.0, 0.0),
                         "2", List.of(0.5, 0.5)
@@ -50,6 +50,6 @@ class BookEmbeddingCacheTest {
         cache.addOrUpdateBook(book);
 
         verify(storage, times(1))
-                .save(eq("book_embeddings.json"), any());
+                .save(eq("data/book_embeddings.json"), any());
     }
 }

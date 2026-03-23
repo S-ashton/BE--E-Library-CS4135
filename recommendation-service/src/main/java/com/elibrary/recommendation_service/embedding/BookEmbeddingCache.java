@@ -24,7 +24,7 @@ public class BookEmbeddingCache {
     @SuppressWarnings("unchecked")
     private void loadCache() {
         Map<String, List<Double>> raw =
-                storage.load("book_embeddings.json", Map.class);
+                storage.load("data/book_embeddings.json", Map.class);
 
         if (raw == null) return;
 
@@ -50,6 +50,6 @@ public class BookEmbeddingCache {
     private void saveCache() {
         Map<String, float[]> raw = new HashMap<>();
         cache.forEach((id, vec) -> raw.put(String.valueOf(id), vec));
-        storage.save("book_embeddings.json", raw);
+        storage.save("data/book_embeddings.json", raw);
     }
 }

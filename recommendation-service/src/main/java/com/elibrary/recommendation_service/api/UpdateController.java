@@ -24,7 +24,7 @@ public class UpdateController {
     public void updateBook(@RequestBody Book book) {
 
         List<Map<String, Object>> rawBooks =
-                storage.load("books.json", List.class);
+                storage.load("data/books.json", List.class);
 
         if (rawBooks == null) rawBooks = new ArrayList<>();
 
@@ -38,7 +38,7 @@ public class UpdateController {
                 "description", book.getDescription()
         ));
 
-        storage.save("books.json", rawBooks);
+        storage.save("data/books.json", rawBooks);
 
         // Embed immediately
         embeddingCache.addOrUpdateBook(book);
@@ -51,7 +51,7 @@ public class UpdateController {
         String bookId = String.valueOf(payload.get("bookId"));
 
         Map<String, List<String>> loans =
-                storage.load("loans.json", Map.class);
+                storage.load("data/loans.json", Map.class);
 
         if (loans == null) loans = new HashMap<>();
 
@@ -61,7 +61,7 @@ public class UpdateController {
             loans.get(userId).add(bookId);
         }
 
-        storage.save("loans.json", loans);
+        storage.save("data/loans.json", loans);
     }
 }
 
