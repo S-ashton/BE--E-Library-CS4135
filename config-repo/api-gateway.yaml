@@ -2,6 +2,9 @@ server:
   port: 8080
 
 spring:
+  http:
+    codecs:
+      log-request-details: false
   cloud:
     gateway:
       server:
@@ -10,22 +13,22 @@ spring:
             - id: user-service
               uri: lb://user-service
               predicates:
-                - Path=/api/v1/auth/**,/api/v1/users/**
+                - Path=/api/v1/auth/**,/api/users/**
 
             - id: book-service
               uri: lb://book-service
               predicates:
-                - Path=/api/v1/books/**
+                - Path=/api/books/**
 
             - id: loan-service
               uri: lb://loan-service
               predicates:
-                - Path=/api/v1/loans/**
+                - Path=/api/loans/**
 
             - id: recommendation-service
               uri: lb://recommendation-service
               predicates:
-                - Path=/api/v1/recommendations/**
+                - Path=/api/recommendations/**
 
 eureka:
   client:
@@ -40,3 +43,7 @@ management:
     web:
       exposure:
         include: health,info,gateway
+
+app:
+  cors:
+    allowed-origin: ${APP_FRONTEND_ORIGIN:http://localhost:3000}
