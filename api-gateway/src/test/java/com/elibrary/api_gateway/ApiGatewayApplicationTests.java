@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.cloud.gateway.route.RouteDefinition;
 import org.springframework.cloud.gateway.route.RouteDefinitionLocator;
 import org.springframework.cloud.gateway.route.RouteLocator;
@@ -28,6 +29,9 @@ class ApiGatewayApplicationTests {
 
 	@Autowired
 	private WebTestClient webTestClient;
+
+	@LocalServerPort
+	private int port;
 
 	@Test
 	void contextLoads() {
@@ -85,5 +89,33 @@ class ApiGatewayApplicationTests {
 				.exchange()
 				.expectStatus()
 				.isNotFound();
+	}
+
+	@Test
+	void allowedOriginPreflightSucceeds() {
+		webTestClient.options()
+				.uri(gatewayUrl("/api/books/test"))
+				.header("Origin", "http://localhost:3000")
+				.header("Access-Control-Request-Method", "GET")
+				.exchange()
+				.expectStatus()
+				.isOk()
+				.expectHeader()
+				.valueEquals("Access-Control-Allow-Origin", "http://localhost:3000");
+	}
+
+	@Test
+	void disallowedOriginPreflightIsRejected() {
+		webTestClient.options()
+				.uri(gatewayUrl("/api/books/test"))
+				.header("Origin", "http://malicious.example")
+				.header("Access-Control-Request-Method", "GET")
+				.exchange()
+				.expectStatus()
+				.isForbidden();
+	}
+
+	private String gatewayUrl(String path) {
+		return "http://localhost:" + port + path;
 	}
 }

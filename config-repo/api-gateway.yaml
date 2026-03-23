@@ -2,6 +2,9 @@ server:
   port: 8080
 
 spring:
+  http:
+    codecs:
+      log-request-details: false
   cloud:
     gateway:
       server:
@@ -40,3 +43,7 @@ management:
     web:
       exposure:
         include: health,info,gateway
+
+app:
+  cors:
+    allowed-origin: ${APP_FRONTEND_ORIGIN:http://localhost:3000}

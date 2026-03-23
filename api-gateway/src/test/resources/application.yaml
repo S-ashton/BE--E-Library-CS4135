@@ -1,4 +1,7 @@
 spring:
+  http:
+    codecs:
+      log-request-details: false
   cloud:
     config:
       enabled: false
@@ -29,3 +32,7 @@ eureka:
 
 server:
   port: 0
+
+app:
+  cors:
+    allowed-origin: http://localhost:3000
