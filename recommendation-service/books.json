@@ -1,4 +1,1 @@
-[
-  { "id": 1, "title": "Book A", "description": "A story about magic" },
-  { "id": 2, "title": "Book B", "description": "A story about science" }
-]
+[{"id":1,"title":"Book A","description":"A story about magic"}]
