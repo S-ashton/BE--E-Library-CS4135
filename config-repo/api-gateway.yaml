@@ -2,6 +2,9 @@ server:
   port: 8080
 
 spring:
+  http:
+    codecs:
+      log-request-details: false
   cloud:
     gateway:
       server:

@@ -1,4 +1,7 @@
 spring:
+  http:
+    codecs:
+      log-request-details: false
   cloud:
     config:
       enabled: false
