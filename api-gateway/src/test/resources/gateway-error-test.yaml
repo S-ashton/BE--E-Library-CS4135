@@ -1,0 +1,32 @@
+spring:
+  http:
+    codecs:
+      log-request-details: false
+  cloud:
+    config:
+      enabled: false
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            response-timeout: 100ms
+          routes:
+            - id: book-service
+              uri: http://localhost:${test.downstream.unavailable-port}
+              predicates:
+                - Path=/api/books/**
+            - id: recommendation-service
+              uri: http://localhost:${test.downstream.slow-port}
+              predicates:
+                - Path=/api/recommendations/**
+
+eureka:
+  client:
+    enabled: false
+
+server:
+  port: 0
+
+app:
+  cors:
+    allowed-origin: http://localhost:3000
