@@ -5,6 +5,8 @@ import com.elibrary.user_service.dto.LoginResponse;
 import com.elibrary.user_service.dto.RegisterRequest;
 import com.elibrary.user_service.dto.UserResponse;
 
+import java.util.List;
+
 public interface UserService {
 
     UserResponse register(RegisterRequest request);
@@ -12,4 +14,6 @@ public interface UserService {
     LoginResponse login(LoginRequest request);
 
     UserResponse getCurrentUser(String email);
+
+    List<UserResponse> getAllUsers();
 }

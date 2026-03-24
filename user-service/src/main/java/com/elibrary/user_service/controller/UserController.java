@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/users")
 @Tag(name = "Users", description = "Protected user profile endpoints")
@@ -38,5 +40,20 @@ public class UserController {
     public ResponseEntity<UserResponse> getCurrentUser(Authentication authentication) {
         UserResponse response = userService.getCurrentUser(authentication.getName());
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+        summary = "List all users",
+        description = "Returns all user profiles. This endpoint is restricted to ADMIN users."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "All user profiles",
+            content = @Content(schema = @Schema(implementation = UserResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Missing, expired, or invalid token", content = @Content),
+        @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
+    })
+    @GetMapping
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
     }
 }

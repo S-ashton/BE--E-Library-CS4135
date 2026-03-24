@@ -19,7 +19,7 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 public class GatewayConfig {
 
     private static final List<String> PUBLIC_PATH_PREFIXES = List.of(
-            "/api/v1/auth/",
+            "/api/auth/",
             "/actuator/",
             "/swagger-ui/",
             "/v3/api-docs");
@@ -63,7 +63,7 @@ public class GatewayConfig {
             return true;
         }
 
-        return path.equals("/api/v1/auth")
+        return path.equals("/api/auth")
                 || path.equals("/actuator")
                 || path.equals("/swagger-ui.html")
                 || PUBLIC_PATH_PREFIXES.stream().anyMatch(path::startsWith);

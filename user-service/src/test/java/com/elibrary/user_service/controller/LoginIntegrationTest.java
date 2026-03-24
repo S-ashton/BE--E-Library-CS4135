@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class LoginIntegrationTest {
 
-    private static final String LOGIN_URL = "/api/v1/auth/login";
+    private static final String LOGIN_URL = "/api/auth/login";
 
     @Autowired
     private MockMvc mockMvc;

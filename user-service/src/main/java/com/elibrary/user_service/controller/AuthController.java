@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 // Handles public authentication endpoints for account creation and login.
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/auth")
 @Tag(name = "Authentication", description = "Public endpoints for user registration and login")
 public class AuthController {
 

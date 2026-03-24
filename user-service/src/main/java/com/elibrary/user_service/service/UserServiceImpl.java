@@ -7,6 +7,7 @@ import com.elibrary.user_service.dto.UserResponse;
 import com.elibrary.user_service.exception.EmailAlreadyExistsException;
 import com.elibrary.user_service.model.User;
 import com.elibrary.user_service.repository.UserRepository;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,6 +15,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -71,5 +74,14 @@ public class UserServiceImpl implements UserService {
             .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         return UserResponse.from(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserResponse> getAllUsers() {
+        return userRepository.findAll(Sort.by(Sort.Direction.ASC, "id"))
+            .stream()
+            .map(UserResponse::from)
+            .toList();
     }
 }
