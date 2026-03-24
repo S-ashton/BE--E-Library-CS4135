@@ -47,3 +47,6 @@ management:
 app:
   cors:
     allowed-origin: ${APP_FRONTEND_ORIGIN:http://localhost:3000}
+  jwt:
+    secret: ${APP_JWT_SECRET}
+    issuer: ${APP_JWT_ISSUER:elibrary-user-service}

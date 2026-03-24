@@ -30,7 +30,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
         HttpSecurity http,
-        JwtAuthenticationFilter jwtAuthenticationFilter,
+        GatewayIdentityAuthenticationFilter gatewayIdentityAuthenticationFilter,
         JsonAuthenticationEntryPoint authenticationEntryPoint,
         JsonAccessDeniedHandler accessDeniedHandler
     ) throws Exception {
@@ -49,7 +49,7 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .anyRequest().permitAll()
             )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(gatewayIdentityAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
@@ -85,10 +85,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    public FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilterRegistration(
-        JwtAuthenticationFilter jwtAuthenticationFilter
+    public FilterRegistrationBean<GatewayIdentityAuthenticationFilter> gatewayIdentityAuthenticationFilterRegistration(
+        GatewayIdentityAuthenticationFilter gatewayIdentityAuthenticationFilter
     ) {
-        FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>(jwtAuthenticationFilter);
+        FilterRegistrationBean<GatewayIdentityAuthenticationFilter> registration =
+            new FilterRegistrationBean<>(gatewayIdentityAuthenticationFilter);
         registration.setEnabled(false);
         return registration;
     }

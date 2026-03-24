@@ -30,3 +30,6 @@ server:
 app:
   cors:
     allowed-origin: http://localhost:3000
+  jwt:
+    secret: test-jwt-secret-for-api-gateway-only-1234567890
+    issuer: user-service-test

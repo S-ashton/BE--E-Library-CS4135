@@ -1,17 +1,14 @@
 package com.elibrary.user_service.controller;
 
-import com.elibrary.user_service.dto.LoginResponse;
 import com.elibrary.user_service.model.Role;
 import com.elibrary.user_service.model.User;
 import com.elibrary.user_service.repository.UserRepository;
-import com.elibrary.user_service.service.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -30,6 +27,7 @@ class RoleBasedAccessIntegrationTest {
 
     private static final String CURRENT_USER_URL = "/api/users/me";
     private static final String USERS_URL = "/api/users";
+    private static final String AUTHENTICATED_USER_HEADER = "X-Authenticated-User";
 
     @Autowired
     private MockMvc mockMvc;
@@ -40,9 +38,6 @@ class RoleBasedAccessIntegrationTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private JwtService jwtService;
-
     @BeforeEach
     void cleanDatabase() {
         userRepository.deleteAll();
@@ -51,10 +46,10 @@ class RoleBasedAccessIntegrationTest {
     @Test
     @DisplayName("USER role can access user-level profile endpoint")
     void me_withUserRole_returnsCurrentUser() throws Exception {
-        User user = createUser("user@elibrary.ie", Role.USER);
+        createUser("user@elibrary.ie", Role.USER);
 
         mockMvc.perform(get(CURRENT_USER_URL)
-                .header(HttpHeaders.AUTHORIZATION, bearerTokenFor(user)))
+                .header(AUTHENTICATED_USER_HEADER, "user@elibrary.ie"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.email").value("user@elibrary.ie"))
             .andExpect(jsonPath("$.role").value("USER"));
@@ -63,10 +58,10 @@ class RoleBasedAccessIntegrationTest {
     @Test
     @DisplayName("STAFF role can access user-level profile endpoint")
     void me_withStaffRole_returnsCurrentUser() throws Exception {
-        User user = createUser("staff@elibrary.ie", Role.STAFF);
+        createUser("staff@elibrary.ie", Role.STAFF);
 
         mockMvc.perform(get(CURRENT_USER_URL)
-                .header(HttpHeaders.AUTHORIZATION, bearerTokenFor(user)))
+                .header(AUTHENTICATED_USER_HEADER, "staff@elibrary.ie"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.email").value("staff@elibrary.ie"))
             .andExpect(jsonPath("$.role").value("STAFF"));
@@ -75,10 +70,10 @@ class RoleBasedAccessIntegrationTest {
     @Test
     @DisplayName("USER role is forbidden from admin-only endpoints")
     void users_withUserRole_returnsForbiddenJson() throws Exception {
-        User user = createUser("user@elibrary.ie", Role.USER);
+        createUser("user@elibrary.ie", Role.USER);
 
         mockMvc.perform(get(USERS_URL)
-                .header(HttpHeaders.AUTHORIZATION, bearerTokenFor(user)))
+                .header(AUTHENTICATED_USER_HEADER, "user@elibrary.ie"))
             .andExpect(status().isForbidden())
             .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.timestamp").value(notNullValue()))
@@ -90,10 +85,10 @@ class RoleBasedAccessIntegrationTest {
     @Test
     @DisplayName("STAFF role is forbidden from admin-only endpoints")
     void users_withStaffRole_returnsForbiddenJson() throws Exception {
-        User user = createUser("staff@elibrary.ie", Role.STAFF);
+        createUser("staff@elibrary.ie", Role.STAFF);
 
         mockMvc.perform(get(USERS_URL)
-                .header(HttpHeaders.AUTHORIZATION, bearerTokenFor(user)))
+                .header(AUTHENTICATED_USER_HEADER, "staff@elibrary.ie"))
             .andExpect(status().isForbidden())
             .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.timestamp").value(notNullValue()))
@@ -105,12 +100,12 @@ class RoleBasedAccessIntegrationTest {
     @Test
     @DisplayName("ADMIN role can access admin-only endpoints")
     void users_withAdminRole_returnsAllUsers() throws Exception {
-        User admin = createUser("admin@elibrary.ie", Role.ADMIN);
+        createUser("admin@elibrary.ie", Role.ADMIN);
         createUser("staff@elibrary.ie", Role.STAFF);
         createUser("user@elibrary.ie", Role.USER);
 
         mockMvc.perform(get(USERS_URL)
-                .header(HttpHeaders.AUTHORIZATION, bearerTokenFor(admin)))
+                .header(AUTHENTICATED_USER_HEADER, "admin@elibrary.ie"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(3)))
             .andExpect(jsonPath("$[*].email", containsInAnyOrder(
@@ -122,10 +117,5 @@ class RoleBasedAccessIntegrationTest {
 
     private User createUser(String email, Role role) {
         return userRepository.save(new User(email, passwordEncoder.encode("Secure@123"), role));
-    }
-
-    private String bearerTokenFor(User user) {
-        LoginResponse loginResponse = jwtService.generateLoginResponse(user);
-        return "Bearer " + loginResponse.getToken();
     }
 }

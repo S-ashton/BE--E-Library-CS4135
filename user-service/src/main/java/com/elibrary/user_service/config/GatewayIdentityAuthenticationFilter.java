@@ -1,16 +1,9 @@
 package com.elibrary.user_service.config;
 
-import com.elibrary.user_service.service.JwtService;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpHeaders;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,18 +18,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
-public class JwtAuthenticationFilter extends OncePerRequestFilter {
+public class GatewayIdentityAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
+    private static final String AUTHENTICATED_USER_HEADER = "X-Authenticated-User";
+
     private final UserDetailsService userDetailsService;
     private final AuthenticationEntryPoint authenticationEntryPoint;
 
-    public JwtAuthenticationFilter(
-        JwtService jwtService,
+    public GatewayIdentityAuthenticationFilter(
         UserDetailsService userDetailsService,
         AuthenticationEntryPoint authenticationEntryPoint
     ) {
-        this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
         this.authenticationEntryPoint = authenticationEntryPoint;
     }
@@ -59,31 +51,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         HttpServletResponse response,
         FilterChain filterChain
     ) throws ServletException, IOException {
-        String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        String email = request.getHeader(AUTHENTICATED_USER_HEADER);
 
-        if (!StringUtils.hasText(authorizationHeader)) {
+        if (!StringUtils.hasText(email)) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        if (!authorizationHeader.startsWith("Bearer ")) {
-            reject(request, response, "Invalid authentication token", new BadCredentialsException("Invalid authentication token"));
-            return;
-        }
-
-        String token = authorizationHeader.substring(7).trim();
-        if (!StringUtils.hasText(token)) {
-            reject(request, response, "Invalid authentication token", new BadCredentialsException("Invalid authentication token"));
-            return;
-        }
-
         try {
-            Claims claims = jwtService.parseToken(token);
-            String email = claims.getSubject();
-            if (!StringUtils.hasText(email)) {
-                throw new BadCredentialsException("Invalid authentication token");
-            }
-
             if (SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
                 if (!userDetails.isEnabled()) {
@@ -92,7 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 var authentication = org.springframework.security.authentication.UsernamePasswordAuthenticationToken.authenticated(
                     userDetails,
-                    token,
+                    null,
                     userDetails.getAuthorities()
                 );
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -100,23 +75,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             filterChain.doFilter(request, response);
-        } catch (ExpiredJwtException ex) {
-            reject(request, response, "Token has expired", new CredentialsExpiredException("Token has expired", ex));
-        } catch (JwtException | AuthenticationException | IllegalArgumentException ex) {
-            reject(request, response, "Invalid authentication token", ex instanceof AuthenticationException authEx
-                ? authEx
-                : new BadCredentialsException("Invalid authentication token", ex));
+        } catch (AuthenticationException ex) {
+            reject(request, response, ex);
         }
     }
 
     private void reject(
         HttpServletRequest request,
         HttpServletResponse response,
-        String message,
         AuthenticationException exception
     ) throws IOException, ServletException {
         SecurityContextHolder.clearContext();
-        request.setAttribute("auth_error_message", message);
+        request.setAttribute("auth_error_message", "Invalid authentication token");
         authenticationEntryPoint.commence(request, response, exception);
     }
 }

@@ -49,6 +49,9 @@ management:
 app:
   cors:
     allowed-origin: ${APP_FRONTEND_ORIGIN:http://localhost:3000} # Replace with the hosted url when that is ready
+  jwt:
+    secret: ${APP_JWT_SECRET}
+    issuer: ${APP_JWT_ISSUER:elibrary-user-service}
 
 # Swagger UI:  http://localhost:8080/swagger-ui.html
 # Raw spec:    http://localhost:8080/v3/api-docs
