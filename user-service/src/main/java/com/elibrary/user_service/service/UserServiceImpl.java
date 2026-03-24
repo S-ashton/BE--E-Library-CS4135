@@ -10,11 +10,11 @@ import com.elibrary.user_service.repository.UserRepository;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// Default implementation of UserService.
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -35,7 +35,6 @@ public class UserServiceImpl implements UserService {
         this.jwtService = jwtService;
     }
 
-    // Enforces email uniqueness, hashes the password with BCrypt, then persists the account.
     @Override
     @Transactional
     public UserResponse register(RegisterRequest request) {
@@ -63,5 +62,14 @@ public class UserServiceImpl implements UserService {
             .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
 
         return jwtService.generateLoginResponse(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse getCurrentUser(String email) {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        return UserResponse.from(user);
     }
 }
