@@ -17,14 +17,14 @@ import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-// Integration tests for POST /api/v1/auth/register.
+// Integration tests for POST /api/auth/register.
 // Covers all acceptance criteria of US-USER-01 (FR-USER-01.1 – FR-USER-01.6).
 // Uses an in-memory H2 database, cleared before each test.
 @SpringBootTest
 @AutoConfigureMockMvc
 class RegisterIntegrationTest {
 
-    private static final String REGISTER_URL = "/api/v1/auth/register";
+    private static final String REGISTER_URL = "/api/auth/register";
 
     @Autowired
     private MockMvc mockMvc;

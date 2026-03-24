@@ -30,7 +30,7 @@ class GatewayAuthenticationContextTests {
     private static final DisposableServer DOWNSTREAM_SERVER = HttpServer.create()
             .port(0)
             .route(routes -> routes
-                    .get("/api/v1/auth/ping", (request, response) -> response.sendString(Mono.just("public")))
+                    .get("/api/auth/ping", (request, response) -> response.sendString(Mono.just("public")))
                     .get("/api/books/echo-auth", (request, response) -> {
                         String authorizationHeader = request.requestHeaders().get(HttpHeaders.AUTHORIZATION);
                         return response.sendString(Mono.just(authorizationHeader == null ? "missing" : authorizationHeader));
@@ -46,7 +46,7 @@ class GatewayAuthenticationContextTests {
     static void overrideRouteUris(DynamicPropertyRegistry registry) {
         registry.add("spring.cloud.gateway.server.webflux.routes[0].id", () -> "user-service");
         registry.add("spring.cloud.gateway.server.webflux.routes[0].uri", () -> DOWNSTREAM_BASE_URL);
-        registry.add("spring.cloud.gateway.server.webflux.routes[0].predicates[0]", () -> "Path=/api/v1/auth/**");
+        registry.add("spring.cloud.gateway.server.webflux.routes[0].predicates[0]", () -> "Path=/api/auth/**");
         registry.add("spring.cloud.gateway.server.webflux.routes[1].id", () -> "book-service");
         registry.add("spring.cloud.gateway.server.webflux.routes[1].uri", () -> DOWNSTREAM_BASE_URL);
         registry.add("spring.cloud.gateway.server.webflux.routes[1].predicates[0]", () -> "Path=/api/books/**");
@@ -60,7 +60,7 @@ class GatewayAuthenticationContextTests {
     @Test
     void publicEndpointsMayRouteWithoutAuthorizationHeader() {
         webTestClient.get()
-                .uri("/api/v1/auth/ping")
+                .uri("/api/auth/ping")
                 .exchange()
                 .expectStatus()
                 .isOk()
