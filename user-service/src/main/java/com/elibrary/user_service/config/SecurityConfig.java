@@ -42,6 +42,7 @@ public class SecurityConfig {
             .map(user -> User.withUsername(user.getEmail())
                 .password(user.getPassword())
                 .roles(user.getRole().name())
+                .disabled(!user.isActive())
                 .build())
             .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
@@ -51,8 +52,7 @@ public class SecurityConfig {
         UserDetailsService userDetailsService,
         PasswordEncoder passwordEncoder
     ) {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailsService);
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder);
         return provider;
     }

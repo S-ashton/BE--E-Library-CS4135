@@ -34,6 +34,7 @@ public class JwtService {
             .issuedAt(Date.from(issuedAt))
             .expiration(Date.from(expiresAt))
             .claim("userId", user.getId())
+            .claim("email", user.getEmail())
             .claim("role", user.getRole().name())
             .signWith(signingKey)
             .compact();

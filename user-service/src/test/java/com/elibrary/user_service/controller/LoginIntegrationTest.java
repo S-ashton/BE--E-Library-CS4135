@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -50,6 +51,9 @@ class LoginIntegrationTest {
 
     @Value("${app.jwt.secret}")
     private String jwtSecret;
+
+    @Value("${app.jwt.issuer}")
+    private String jwtIssuer;
 
     @BeforeEach
     void cleanDatabase() {
@@ -84,7 +88,10 @@ class LoginIntegrationTest {
             .parseSignedClaims(token)
             .getPayload();
 
+        assertNotNull(claims.get("userId", Number.class));
+        assertEquals("reader@elibrary.ie", claims.get("email", String.class));
         assertEquals("reader@elibrary.ie", claims.getSubject());
+        assertEquals(jwtIssuer, claims.getIssuer());
         assertEquals("USER", claims.get("role", String.class));
         assertEquals(claims.getExpiration().toInstant(), expiresAt);
     }
@@ -119,5 +126,22 @@ class LoginIntegrationTest {
             .andExpect(jsonPath("$.status").value(401))
             .andExpect(jsonPath("$.message").value("Invalid credentials"))
             .andExpect(jsonPath("$.message", not(containsString("missing@elibrary.ie"))));
+    }
+
+    @Test
+    @DisplayName("Inactive accounts are not issued JWT tokens")
+    void login_inactiveAccount_returnsGeneric401() throws Exception {
+        userRepository.save(new User("inactive@elibrary.ie", passwordEncoder.encode("Secure@123"), Role.USER, false));
+
+        mockMvc.perform(post(LOGIN_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "email", "inactive@elibrary.ie",
+                    "password", "Secure@123"
+                ))))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.status").value(401))
+            .andExpect(jsonPath("$.message").value("Invalid credentials"))
+            .andExpect(jsonPath("$.token").doesNotExist());
     }
 }
