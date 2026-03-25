@@ -4,6 +4,7 @@ import com.elibrary.user_service.dto.LoginRequest;
 import com.elibrary.user_service.dto.LoginResponse;
 import com.elibrary.user_service.dto.ProfileResponseDTO;
 import com.elibrary.user_service.dto.RegisterRequest;
+import com.elibrary.user_service.dto.UpdateProfileRequestDTO;
 import com.elibrary.user_service.dto.UserResponse;
 import com.elibrary.user_service.exception.EmailAlreadyExistsException;
 import com.elibrary.user_service.exception.UserNotFoundException;
@@ -75,6 +76,22 @@ public class UserServiceImpl implements UserService {
             .orElseThrow(() -> new UserNotFoundException(userId));
 
         return ProfileResponseDTO.from(user);
+    }
+
+    @Override
+    @Transactional
+    public ProfileResponseDTO updateCurrentUser(Long userId, UpdateProfileRequestDTO request) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new UserNotFoundException(userId));
+
+        String normalizedEmail = request.getEmail().trim();
+        if (!normalizedEmail.equalsIgnoreCase(user.getEmail()) && userRepository.existsByEmail(normalizedEmail)) {
+            throw new EmailAlreadyExistsException(normalizedEmail);
+        }
+
+        user.setEmail(normalizedEmail);
+        User saved = userRepository.save(user);
+        return ProfileResponseDTO.from(saved);
     }
 
     @Override
