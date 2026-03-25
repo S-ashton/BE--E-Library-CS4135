@@ -2,16 +2,18 @@ package com.elibrary.user_service.service;
 
 import com.elibrary.user_service.dto.LoginRequest;
 import com.elibrary.user_service.dto.LoginResponse;
+import com.elibrary.user_service.dto.ProfileResponseDTO;
 import com.elibrary.user_service.dto.RegisterRequest;
+import com.elibrary.user_service.dto.UpdateProfileRequestDTO;
 import com.elibrary.user_service.dto.UserResponse;
 import com.elibrary.user_service.exception.EmailAlreadyExistsException;
+import com.elibrary.user_service.exception.UserNotFoundException;
 import com.elibrary.user_service.model.User;
 import com.elibrary.user_service.repository.UserRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,11 +71,27 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserResponse getCurrentUser(String email) {
-        User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    public ProfileResponseDTO getCurrentUser(Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new UserNotFoundException(userId));
 
-        return UserResponse.from(user);
+        return ProfileResponseDTO.from(user);
+    }
+
+    @Override
+    @Transactional
+    public ProfileResponseDTO updateCurrentUser(Long userId, UpdateProfileRequestDTO request) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new UserNotFoundException(userId));
+
+        String normalizedEmail = request.getEmail().trim();
+        if (!normalizedEmail.equalsIgnoreCase(user.getEmail()) && userRepository.existsByEmail(normalizedEmail)) {
+            throw new EmailAlreadyExistsException(normalizedEmail);
+        }
+
+        user.setEmail(normalizedEmail);
+        User saved = userRepository.save(user);
+        return ProfileResponseDTO.from(saved);
     }
 
     @Override
