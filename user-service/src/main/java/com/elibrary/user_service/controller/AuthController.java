@@ -14,9 +14,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-// Handles public authentication endpoints for account creation and login.
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Authentication", description = "Public endpoints for user registration and login")
@@ -35,7 +37,7 @@ public class AuthController {
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Account created successfully",
             content = @Content(schema = @Schema(implementation = UserResponse.class))),
-        @ApiResponse(responseCode = "400", description = "Validation failed — invalid email, weak password, or missing fields",
+        @ApiResponse(responseCode = "400", description = "Validation failed - invalid email, weak password, or missing fields",
             content = @Content),
         @ApiResponse(responseCode = "409", description = "Email address is already registered",
             content = @Content)
