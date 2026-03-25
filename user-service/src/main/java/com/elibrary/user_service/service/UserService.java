@@ -2,6 +2,7 @@ package com.elibrary.user_service.service;
 
 import com.elibrary.user_service.dto.LoginRequest;
 import com.elibrary.user_service.dto.LoginResponse;
+import com.elibrary.user_service.dto.ProfileResponseDTO;
 import com.elibrary.user_service.dto.RegisterRequest;
 import com.elibrary.user_service.dto.UserResponse;
 
@@ -13,7 +14,7 @@ public interface UserService {
 
     LoginResponse login(LoginRequest request);
 
-    UserResponse getCurrentUser(String email);
+    ProfileResponseDTO getCurrentUser(Long userId);
 
     List<UserResponse> getAllUsers();
 }

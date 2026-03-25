@@ -25,6 +25,7 @@ class GatewayIdentityIntegrationTest {
 
     private static final String CURRENT_USER_URL = "/api/users/me";
     private static final String AUTHENTICATED_USER_HEADER = "X-Authenticated-User";
+    private static final String AUTHENTICATED_USER_ID_HEADER = "X-Authenticated-User-Id";
 
     @Autowired
     private MockMvc mockMvc;
@@ -58,13 +59,30 @@ class GatewayIdentityIntegrationTest {
         User savedUser = userRepository.save(new User("reader@elibrary.ie", passwordEncoder.encode("Secure@123"), Role.USER));
 
         mockMvc.perform(get(CURRENT_USER_URL)
-                .header(AUTHENTICATED_USER_HEADER, "reader@elibrary.ie"))
+                .header(AUTHENTICATED_USER_HEADER, "reader@elibrary.ie")
+                .header(AUTHENTICATED_USER_ID_HEADER, savedUser.getId()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(savedUser.getId()))
             .andExpect(jsonPath("$.email").value("reader@elibrary.ie"))
             .andExpect(jsonPath("$.role").value("USER"))
             .andExpect(jsonPath("$.createdAt").value(notNullValue()))
             .andExpect(jsonPath("$.password").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("Protected endpoint returns 404 when authenticated user id does not exist")
+    void me_withMissingUserId_returnsJson404() throws Exception {
+        userRepository.save(new User("reader@elibrary.ie", passwordEncoder.encode("Secure@123"), Role.USER));
+
+        mockMvc.perform(get(CURRENT_USER_URL)
+                .header(AUTHENTICATED_USER_HEADER, "reader@elibrary.ie")
+                .header(AUTHENTICATED_USER_ID_HEADER, 999999))
+            .andExpect(status().isNotFound())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.timestamp").value(notNullValue()))
+            .andExpect(jsonPath("$.status").value(404))
+            .andExpect(jsonPath("$.error").value("Not Found"))
+            .andExpect(jsonPath("$.message").value("User not found"));
     }
 
     @Test

@@ -12,11 +12,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-// Centralised exception handling that returns consistent JSON error responses.
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Bean Validation failures, 400 Bad Request with a per-field errors array.
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
         List<Map<String, String>> fieldErrors = ex.getBindingResult()
@@ -35,12 +33,18 @@ public class GlobalExceptionHandler {
                 .body(buildBody(HttpStatus.BAD_REQUEST, "Validation failed", fieldErrors));
     }
 
-    // Duplicate email on registration, 409 Conflict.
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<Map<String, Object>> handleEmailConflict(EmailAlreadyExistsException ex) {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body(buildBody(HttpStatus.CONFLICT, ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleUserNotFound(UserNotFoundException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(buildBody(HttpStatus.NOT_FOUND, ex.getMessage(), null));
     }
 
     @ExceptionHandler(AuthenticationException.class)
@@ -50,7 +54,6 @@ public class GlobalExceptionHandler {
                 .body(buildBody(HttpStatus.UNAUTHORIZED, "Invalid credentials", null));
     }
 
-    // Catch all 500. Internal detail is not exposed to the caller.
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
         return ResponseEntity

@@ -28,6 +28,7 @@ class RoleBasedAccessIntegrationTest {
     private static final String CURRENT_USER_URL = "/api/users/me";
     private static final String USERS_URL = "/api/users";
     private static final String AUTHENTICATED_USER_HEADER = "X-Authenticated-User";
+    private static final String AUTHENTICATED_USER_ID_HEADER = "X-Authenticated-User-Id";
 
     @Autowired
     private MockMvc mockMvc;
@@ -46,10 +47,11 @@ class RoleBasedAccessIntegrationTest {
     @Test
     @DisplayName("USER role can access user-level profile endpoint")
     void me_withUserRole_returnsCurrentUser() throws Exception {
-        createUser("user@elibrary.ie", Role.USER);
+        User user = createUser("user@elibrary.ie", Role.USER);
 
         mockMvc.perform(get(CURRENT_USER_URL)
-                .header(AUTHENTICATED_USER_HEADER, "user@elibrary.ie"))
+                .header(AUTHENTICATED_USER_HEADER, "user@elibrary.ie")
+                .header(AUTHENTICATED_USER_ID_HEADER, user.getId()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.email").value("user@elibrary.ie"))
             .andExpect(jsonPath("$.role").value("USER"));
@@ -58,10 +60,11 @@ class RoleBasedAccessIntegrationTest {
     @Test
     @DisplayName("STAFF role can access user-level profile endpoint")
     void me_withStaffRole_returnsCurrentUser() throws Exception {
-        createUser("staff@elibrary.ie", Role.STAFF);
+        User user = createUser("staff@elibrary.ie", Role.STAFF);
 
         mockMvc.perform(get(CURRENT_USER_URL)
-                .header(AUTHENTICATED_USER_HEADER, "staff@elibrary.ie"))
+                .header(AUTHENTICATED_USER_HEADER, "staff@elibrary.ie")
+                .header(AUTHENTICATED_USER_ID_HEADER, user.getId()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.email").value("staff@elibrary.ie"))
             .andExpect(jsonPath("$.role").value("STAFF"));
