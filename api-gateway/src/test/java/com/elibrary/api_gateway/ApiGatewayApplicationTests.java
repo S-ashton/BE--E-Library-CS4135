@@ -73,7 +73,7 @@ class ApiGatewayApplicationTests {
 				));
 
 		assertThat(pathPredicatesByRouteId.get("user-service"))
-				.containsExactlyInAnyOrder("/api/v1/auth/**", "/api/users/**");
+				.containsExactlyInAnyOrder("/api/auth/**", "/api/users/**");
 		assertThat(pathPredicatesByRouteId.get("book-service"))
 				.containsExactly("/api/books/**");
 		assertThat(pathPredicatesByRouteId.get("loan-service"))

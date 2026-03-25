@@ -4,7 +4,7 @@ import com.elibrary.user_service.model.Role;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
-// Inbound DTO for POST /api/v1/auth/register.
+// Inbound DTO for POST /api/auth/register.
 // Password policy: min 8 chars, uppercase, lowercase, digit, and special character.
 // Role defaults to USER if not included in the request.
 @Schema(description = "Registration request payload")

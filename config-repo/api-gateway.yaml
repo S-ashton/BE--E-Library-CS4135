@@ -13,7 +13,7 @@ spring:
             - id: user-service
               uri: lb://user-service
               predicates:
-                - Path=/api/v1/auth/**,/api/users/**
+                - Path=/api/auth/**,/api/users/**
 
             - id: book-service
               uri: lb://book-service
@@ -47,3 +47,6 @@ management:
 app:
   cors:
     allowed-origin: ${APP_FRONTEND_ORIGIN:http://localhost:3000}
+  jwt:
+    secret: ${APP_JWT_SECRET}
+    issuer: ${APP_JWT_ISSUER:elibrary-user-service}
