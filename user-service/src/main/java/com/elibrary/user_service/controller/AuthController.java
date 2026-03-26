@@ -8,10 +8,12 @@ import com.elibrary.user_service.dto.UserResponse;
 import com.elibrary.user_service.service.AuthSession;
 import com.elibrary.user_service.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
-@Tag(name = "Authentication", description = "Public endpoints for user registration and login")
+@Tag(name = "Authentication", description = "Public endpoints for registration, login, refresh, and logout")
 public class AuthController {
 
     private final UserService userService;
@@ -56,11 +58,13 @@ public class AuthController {
 
     @Operation(
         summary = "Authenticate a user and issue a JWT",
-        description = "Authenticates with email and password. On success returns a signed JWT and its expiry timestamp."
+        description = "Authenticates with email and password. On success returns a signed JWT access token and its expiry timestamp " +
+            "in the response body, and also sets a refresh token in an HttpOnly cookie."
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Login successful",
-            content = @Content(schema = @Schema(implementation = LoginResponse.class))),
+            content = @Content(schema = @Schema(implementation = LoginResponse.class)),
+            headers = @Header(name = "Set-Cookie", description = "Sets the HttpOnly refresh-token cookie.")),
         @ApiResponse(responseCode = "400", description = "Validation failed", content = @Content),
         @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content)
     })
@@ -76,11 +80,14 @@ public class AuthController {
 
     @Operation(
         summary = "Issue a new JWT using a refresh token",
-        description = "Reads the refresh token cookie and, when valid, rotates it and returns a new signed JWT."
+        description = "Reads the refresh-token cookie and, when valid, rotates it, returns a new signed JWT access token, " +
+            "and sets a new refresh-token cookie. Frontends should call this with credentials included so the browser sends the cookie.",
+        security = @SecurityRequirement(name = "refreshCookieAuth")
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Refresh successful",
-            content = @Content(schema = @Schema(implementation = LoginResponse.class))),
+            content = @Content(schema = @Schema(implementation = LoginResponse.class)),
+            headers = @Header(name = "Set-Cookie", description = "Sets the rotated HttpOnly refresh-token cookie.")),
         @ApiResponse(responseCode = "401", description = "Missing, expired, or invalid refresh token", content = @Content)
     })
     @PostMapping("/refresh")
@@ -96,11 +103,12 @@ public class AuthController {
 
     @Operation(
         summary = "Logout the current session",
-        description = "Revokes the refresh token cookie for the current session and clears it from the client."
+        description = "Revokes the current refresh token and clears the refresh-token cookie from the client.",
+        security = @SecurityRequirement(name = "refreshCookieAuth")
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Logout successful"),
-        @ApiResponse(responseCode = "400", description = "Validation failed", content = @Content)
+        @ApiResponse(responseCode = "204", description = "Logout successful",
+            headers = @Header(name = "Set-Cookie", description = "Clears the refresh-token cookie by setting Max-Age=0."))
     })
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(

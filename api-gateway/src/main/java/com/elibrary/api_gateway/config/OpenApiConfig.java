@@ -21,8 +21,10 @@ public class OpenApiConfig {
                         .description(
                                 "Single entry point for all E-Library client requests. " +
                                 "Routes traffic to the correct downstream service, applies CORS, " +
-                                "and validates bearer tokens on protected routes. Internal service URLs " +
-                                "are never exposed to the client."
+                                "validates JWT bearer access tokens on protected routes, and exposes " +
+                                "public authentication endpoints under /api/auth. Login returns an access token " +
+                                "in the response body and sets a refresh token in an HttpOnly cookie. " +
+                                "Refresh and logout use that refresh-token cookie."
                         )
                         .version("v1"))
                 .components(new Components()
@@ -31,7 +33,13 @@ public class OpenApiConfig {
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")
-                                        .description("JWT bearer token sent to the gateway in the Authorization header.")))
+                                        .description("JWT access token sent to the gateway in the Authorization header as 'Bearer <token>'."))
+                        .addSecuritySchemes("refreshCookieAuth",
+                                new SecurityScheme()
+                                        .type(SecurityScheme.Type.APIKEY)
+                                        .in(SecurityScheme.In.COOKIE)
+                                        .name("refreshToken")
+                                        .description("HttpOnly refresh-token cookie used by /api/auth/refresh and /api/auth/logout.")))
                 .servers(List.of(
                         new Server().url("http://localhost:8080").description("Local development")
                 ));
