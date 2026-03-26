@@ -7,8 +7,7 @@ import java.util.UUID;
 @Component
 public class BookServiceClient {
 
-    public boolean isBookAvailable(UUID bookId) {
-        // Temporary stub for ticket 1
-        return true;
+    public void reserveBook(UUID bookId, UUID userId) {
+        // Temporary stub until Book Service endpoint is available
     }
 }
