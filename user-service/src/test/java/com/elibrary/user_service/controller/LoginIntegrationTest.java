@@ -2,6 +2,7 @@ package com.elibrary.user_service.controller;
 
 import com.elibrary.user_service.model.Role;
 import com.elibrary.user_service.model.User;
+import com.elibrary.user_service.repository.RefreshTokenRepository;
 import com.elibrary.user_service.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -24,10 +26,13 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -47,6 +52,9 @@ class LoginIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Value("${app.jwt.secret}")
@@ -55,8 +63,12 @@ class LoginIntegrationTest {
     @Value("${app.jwt.issuer}")
     private String jwtIssuer;
 
+    @Value("${app.jwt.refresh-cookie-name}")
+    private String refreshCookieName;
+
     @BeforeEach
     void cleanDatabase() {
+        refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
     }
 
@@ -74,7 +86,14 @@ class LoginIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.token").value(notNullValue()))
             .andExpect(jsonPath("$.expiresAt").value(notNullValue()))
+            .andExpect(jsonPath("$.refreshToken").doesNotExist())
             .andExpect(jsonPath("$.password").doesNotExist())
+            .andExpect(header().string(HttpHeaders.SET_COOKIE, allOf(
+                containsString(refreshCookieName + "="),
+                containsString("HttpOnly"),
+                containsString("Path=/api/auth"),
+                startsWith(refreshCookieName + "=")
+            )))
             .andReturn()
             .getResponse()
             .getContentAsString();

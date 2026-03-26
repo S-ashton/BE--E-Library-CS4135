@@ -1,7 +1,6 @@
 package com.elibrary.user_service.service;
 
 import com.elibrary.user_service.dto.LoginRequest;
-import com.elibrary.user_service.dto.LoginResponse;
 import com.elibrary.user_service.dto.ProfileResponseDTO;
 import com.elibrary.user_service.dto.RegisterRequest;
 import com.elibrary.user_service.dto.UpdateProfileRequestDTO;
@@ -27,17 +26,20 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
 
     public UserServiceImpl(
         UserRepository userRepository,
         PasswordEncoder passwordEncoder,
         AuthenticationManager authenticationManager,
-        JwtService jwtService
+        JwtService jwtService,
+        RefreshTokenService refreshTokenService
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Override
@@ -57,8 +59,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public LoginResponse login(LoginRequest request) {
+    @Transactional
+    public AuthSession login(LoginRequest request) {
         authenticationManager.authenticate(
             UsernamePasswordAuthenticationToken.unauthenticated(request.getEmail(), request.getPassword())
         );
@@ -66,7 +68,20 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
 
-        return jwtService.generateLoginResponse(user);
+        String refreshToken = refreshTokenService.issueRefreshToken(user);
+        return new AuthSession(jwtService.generateAccessTokenResponse(user), refreshToken);
+    }
+
+    @Override
+    @Transactional
+    public AuthSession refresh(String refreshToken) {
+        return refreshTokenService.refreshSession(refreshToken, jwtService);
+    }
+
+    @Override
+    @Transactional
+    public void logout(String refreshToken) {
+        refreshTokenService.revoke(refreshToken);
     }
 
     @Override

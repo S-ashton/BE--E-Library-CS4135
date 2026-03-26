@@ -31,7 +31,7 @@ public class JwtService {
             .build();
     }
 
-    public LoginResponse generateLoginResponse(User user) {
+    public LoginResponse generateAccessTokenResponse(User user) {
         Instant issuedAt = Instant.now().truncatedTo(ChronoUnit.SECONDS);
         Instant expiresAt = issuedAt.plusSeconds(jwtProperties.getExpirationSeconds());
 
@@ -47,6 +47,10 @@ public class JwtService {
             .compact();
 
         return new LoginResponse(token, expiresAt);
+    }
+
+    public LoginResponse generateLoginResponse(User user) {
+        return generateAccessTokenResponse(user);
     }
 
     public Claims parseToken(String token) {
