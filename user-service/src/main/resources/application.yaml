@@ -10,3 +10,8 @@ app:
     secret: ${APP_JWT_SECRET}
     expiration-seconds: ${APP_JWT_EXPIRATION_SECONDS:3600}
     issuer: ${APP_JWT_ISSUER:elibrary-user-service}
+    refresh-expiration-seconds: ${APP_JWT_REFRESH_EXPIRATION_SECONDS:1209600}
+    refresh-cookie-name: ${APP_JWT_REFRESH_COOKIE_NAME:refreshToken}
+    refresh-cookie-path: ${APP_JWT_REFRESH_COOKIE_PATH:/api/auth}
+    refresh-cookie-same-site: ${APP_JWT_REFRESH_COOKIE_SAME_SITE:Lax}
+    refresh-cookie-secure: ${APP_JWT_REFRESH_COOKIE_SECURE:true}

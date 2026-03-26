@@ -10,3 +10,8 @@ app:
     secret: test-jwt-secret-for-user-service-only-1234567890
     expiration-seconds: 3600
     issuer: user-service-test
+    refresh-expiration-seconds: 1209600
+    refresh-cookie-name: refreshToken
+    refresh-cookie-path: /api/auth
+    refresh-cookie-same-site: Lax
+    refresh-cookie-secure: false
