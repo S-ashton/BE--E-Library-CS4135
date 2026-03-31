@@ -14,17 +14,27 @@ public class LoanEventPublisher {
     private final RabbitTemplate rabbitTemplate;
     private final String exchange;
     private final String borrowedRoutingKey;
+    private final String returnedRoutingKey;
 
-    public LoanEventPublisher(RabbitTemplate rabbitTemplate,
-                              @Value("${loan.events.exchange}") String exchange,
-                              @Value("${loan.events.borrowed-routing-key}") String borrowedRoutingKey) {
+    public LoanEventPublisher(
+            RabbitTemplate rabbitTemplate,
+            @Value("${loan.events.exchange}") String exchange,
+            @Value("${loan.events.borrowed-routing-key}") String borrowedRoutingKey,
+            @Value("${loan.events.returned-routing-key}") String returnedRoutingKey
+    ) {
         this.rabbitTemplate = rabbitTemplate;
         this.exchange = exchange;
         this.borrowedRoutingKey = borrowedRoutingKey;
+        this.returnedRoutingKey = returnedRoutingKey;
     }
 
     public void publishLoanBorrowed(LoanBorrowedEvent event) {
         rabbitTemplate.convertAndSend(exchange, borrowedRoutingKey, event);
         log.info("Published loan.borrowed event for loanId={}", event.getLoanId());
+    }
+
+    public void publishLoanReturned(LoanReturnedEvent event) {
+        rabbitTemplate.convertAndSend(exchange, returnedRoutingKey, event);
+        log.info("Published loan.returned event for loanId={}", event.getLoanId());
     }
 }

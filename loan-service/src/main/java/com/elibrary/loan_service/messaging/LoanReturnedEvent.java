@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public class LoanBorrowedEvent implements Serializable {
+public class LoanReturnedEvent implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -13,10 +13,10 @@ public class LoanBorrowedEvent implements Serializable {
     private UUID bookId;
     private LocalDateTime timestamp;
 
-    public LoanBorrowedEvent() {
+    public LoanReturnedEvent() {
     }
 
-    public LoanBorrowedEvent(UUID loanId, Long userId, UUID bookId, LocalDateTime timestamp) {
+    public LoanReturnedEvent(UUID loanId, Long userId, UUID bookId, LocalDateTime timestamp) {
         this.loanId = loanId;
         this.userId = userId;
         this.bookId = bookId;

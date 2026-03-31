@@ -34,10 +34,22 @@ public class LoanController {
     @PostMapping
     public ResponseEntity<LoanDTO> borrowBook(
             @Valid @RequestBody BorrowRequestDTO request,
-            @Parameter(description = "Temporary user identity header for testing")
-            @RequestHeader("X-User-Id") UUID userId
+            @Parameter(description = "Trusted identity header forwarded by gateway")
+            @RequestHeader("X-Authenticated-User-Id") Long userId
     ) {
         LoanDTO response = loanService.borrowBook(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Operation(summary = "Return a book")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Loan returned successfully"),
+            @ApiResponse(responseCode = "404", description = "Loan not found"),
+            @ApiResponse(responseCode = "409", description = "Loan already returned")
+    })
+    @PostMapping("/{id}/return")
+    public ResponseEntity<LoanDTO> returnLoan(@PathVariable("id") UUID loanId) {
+        LoanDTO response = loanService.returnLoan(loanId);
+        return ResponseEntity.ok(response);
     }
 }

@@ -17,7 +17,7 @@ public class NotificationTask {
     private UUID loanId;
 
     @Column(nullable = false)
-    private UUID userId;
+    private Long userId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -38,13 +38,19 @@ public class NotificationTask {
     public NotificationTask() {
     }
 
-    public NotificationTask(UUID loanId, UUID userId, NotificationType type, LocalDateTime scheduledAt) {
+    public NotificationTask(UUID loanId, Long userId, NotificationType type, LocalDateTime scheduledAt) {
         this.loanId = loanId;
         this.userId = userId;
         this.type = type;
         this.scheduledAt = scheduledAt;
         this.status = NotificationStatus.PENDING;
         this.retryCount = 0;
+    }
+
+    public void cancel() {
+        if (this.status == NotificationStatus.PENDING) {
+            this.status = NotificationStatus.CANCELLED;
+        }
     }
 
     public UUID getId() {
@@ -55,7 +61,7 @@ public class NotificationTask {
         return loanId;
     }
 
-    public UUID getUserId() {
+    public Long getUserId() {
         return userId;
     }
 

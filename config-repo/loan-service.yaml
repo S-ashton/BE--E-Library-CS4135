@@ -36,3 +36,4 @@ loan:
   events:
     exchange: loan.events
     borrowed-routing-key: loan.borrowed
+    returned-routing-key: loan.returned

@@ -3,9 +3,9 @@ package com.elibrary.loan_service.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.MissingRequestHeaderException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,11 +27,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
-    @ExceptionHandler(UnauthenticatedRequestException.class)
-    public ResponseEntity<Map<String, String>> handleUnauthenticated(UnauthenticatedRequestException ex) {
+    @ExceptionHandler(LoanAlreadyReturnedException.class)
+    public ResponseEntity<Map<String, String>> handleLoanAlreadyReturned(LoanAlreadyReturnedException ex) {
         Map<String, String> error = new HashMap<>();
         error.put("error", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    @ExceptionHandler(LoanNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleLoanNotFound(LoanNotFoundException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
     @ExceptionHandler(MissingRequestHeaderException.class)

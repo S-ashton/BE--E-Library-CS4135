@@ -9,7 +9,7 @@ import java.util.UUID;
 public class LoanDTO {
 
     private UUID id;
-    private UUID userId;
+    private Long userId;
     private UUID bookId;
     private LocalDateTime borrowDate;
     private LocalDateTime dueDate;
@@ -25,11 +25,11 @@ public class LoanDTO {
         this.id = id;
     }
 
-    public UUID getUserId() {
+    public Long getUserId() {
         return userId;
     }
 
-    public void setUserId(UUID userId) {
+    public void setUserId(Long userId) {
         this.userId = userId;
     }
 

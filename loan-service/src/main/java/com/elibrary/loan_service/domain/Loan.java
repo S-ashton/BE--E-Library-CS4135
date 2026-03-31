@@ -1,5 +1,6 @@
 package com.elibrary.loan_service.domain;
 
+import com.elibrary.loan_service.exception.LoanAlreadyReturnedException;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -15,7 +16,7 @@ public class Loan {
     private UUID id;
 
     @Column(nullable = false)
-    private UUID userId;
+    private Long userId;
 
     @Column(nullable = false)
     private UUID bookId;
@@ -39,7 +40,7 @@ public class Loan {
         this.fineAmount = BigDecimal.ZERO;
     }
 
-    public Loan(UUID userId, UUID bookId, LocalDateTime borrowDate, LocalDateTime dueDate, LoanStatus status) {
+    public Loan(Long userId, UUID bookId, LocalDateTime borrowDate, LocalDateTime dueDate, LoanStatus status) {
         this.userId = userId;
         this.bookId = bookId;
         this.borrowDate = borrowDate;
@@ -48,11 +49,21 @@ public class Loan {
         this.fineAmount = BigDecimal.ZERO;
     }
 
+    public void markReturned(LocalDateTime returnedAt, BigDecimal fineAmount) {
+        if (this.status == LoanStatus.RETURNED) {
+            throw new LoanAlreadyReturnedException("Loan is already returned");
+        }
+
+        this.returnDate = returnedAt;
+        this.status = LoanStatus.RETURNED;
+        this.fineAmount = fineAmount.max(BigDecimal.ZERO);
+    }
+
     public UUID getId() {
         return id;
     }
 
-    public UUID getUserId() {
+    public Long getUserId() {
         return userId;
     }
 
