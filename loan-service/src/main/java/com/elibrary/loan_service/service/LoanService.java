@@ -126,6 +126,14 @@ public class LoanService {
         return loanMapper.toDto(savedLoan);
     }
 
+    @Transactional(readOnly = true)
+    public List<LoanDTO> getLoanHistory(Long userId) {
+        return loanRepository.findByUserIdOrderByBorrowDateDesc(userId)
+                .stream()
+                .map(loanMapper::toDto)
+                .toList();
+    }
+
     private BigDecimal calculateFine(LocalDateTime dueDate, LocalDateTime returnedAt) {
         if (!returnedAt.isAfter(dueDate)) {
             return BigDecimal.ZERO;

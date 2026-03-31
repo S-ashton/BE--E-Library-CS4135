@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -50,6 +51,20 @@ public class LoanController {
     @PostMapping("/{id}/return")
     public ResponseEntity<LoanDTO> returnLoan(@PathVariable("id") UUID loanId) {
         LoanDTO response = loanService.returnLoan(loanId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Get loan history for the authenticated user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Loan history returned successfully"),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid user identity")
+    })
+    @GetMapping("/history")
+    public ResponseEntity<List<LoanDTO>> getLoanHistory(
+            @Parameter(description = "Trusted identity header forwarded by gateway")
+            @RequestHeader("X-Authenticated-User-Id") Long userId
+    ) {
+        List<LoanDTO> response = loanService.getLoanHistory(userId);
         return ResponseEntity.ok(response);
     }
 }
