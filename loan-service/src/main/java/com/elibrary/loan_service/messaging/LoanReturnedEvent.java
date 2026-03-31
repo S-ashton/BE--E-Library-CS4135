@@ -1,12 +1,9 @@
 package com.elibrary.loan_service.messaging;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public class LoanReturnedEvent implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class LoanReturnedEvent {
 
     private UUID loanId;
     private Long userId;
