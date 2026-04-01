@@ -134,6 +134,37 @@ public class LoanService {
                 .toList();
     }
 
+    @Transactional
+    public void processOverdueLoans() {
+        List<Loan> overdueLoans = loanRepository.findByStatusAndDueDateBefore(
+                LoanStatus.ACTIVE,
+                LocalDateTime.now()
+        );
+
+        for (Loan loan : overdueLoans) {
+            loan.markOverdue();
+            loanRepository.save(loan);
+
+            boolean overdueAlertExists = notificationTaskRepository.existsByLoanIdAndTypeAndStatus(
+                    loan.getId(),
+                    NotificationType.OVERDUE_ALERT,
+                    NotificationStatus.PENDING
+            );
+
+            if (!overdueAlertExists) {
+                NotificationTask overdueTask = new NotificationTask(
+                        loan.getId(),
+                        loan.getUserId(),
+                        NotificationType.OVERDUE_ALERT,
+                        LocalDateTime.now()
+                );
+                notificationTaskRepository.save(overdueTask);
+            }
+
+            log.info("Marked loan {} as overdue", loan.getId());
+        }
+    }
+
     private BigDecimal calculateFine(LocalDateTime dueDate, LocalDateTime returnedAt) {
         if (!returnedAt.isAfter(dueDate)) {
             return BigDecimal.ZERO;

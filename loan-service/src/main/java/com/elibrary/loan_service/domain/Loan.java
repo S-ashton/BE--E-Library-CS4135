@@ -59,6 +59,12 @@ public class Loan {
         this.fineAmount = fineAmount.max(BigDecimal.ZERO);
     }
 
+    public void markOverdue() {
+        if (this.status == LoanStatus.ACTIVE && LocalDateTime.now().isAfter(this.dueDate)) {
+            this.status = LoanStatus.OVERDUE;
+        }
+    }
+
     public UUID getId() {
         return id;
     }
