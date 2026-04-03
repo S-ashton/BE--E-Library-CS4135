@@ -53,6 +53,22 @@ public class NotificationTask {
         }
     }
 
+    public void markSent() {
+        this.status = NotificationStatus.SENT;
+        this.sentAt = LocalDateTime.now();
+    }
+
+    public void markFailed() {
+        if (this.status == NotificationStatus.PENDING || this.status == NotificationStatus.FAILED) {
+            this.status = NotificationStatus.FAILED;
+            this.retryCount += 1;
+        }
+    }
+
+    public void markDead() {
+        this.status = NotificationStatus.DEAD;
+    }
+
     public UUID getId() {
         return id;
     }

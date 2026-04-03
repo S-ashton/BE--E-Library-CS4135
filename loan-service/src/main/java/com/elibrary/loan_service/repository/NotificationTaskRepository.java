@@ -5,6 +5,7 @@ import com.elibrary.loan_service.domain.NotificationTask;
 import com.elibrary.loan_service.domain.NotificationType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,4 +14,6 @@ public interface NotificationTaskRepository extends JpaRepository<NotificationTa
     List<NotificationTask> findByLoanIdAndStatus(UUID loanId, NotificationStatus status);
 
     boolean existsByLoanIdAndTypeAndStatus(UUID loanId, NotificationType type, NotificationStatus status);
+
+    List<NotificationTask> findByStatusAndScheduledAtBefore(NotificationStatus status, LocalDateTime time);
 }

@@ -28,6 +28,7 @@ public class LoanService {
 
     private static final Logger log = LoggerFactory.getLogger(LoanService.class);
     private static final BigDecimal DAILY_FINE_RATE = BigDecimal.valueOf(2);
+    private static final int MAX_NOTIFICATION_RETRIES = 3;
 
     private final LoanRepository loanRepository;
     private final NotificationTaskRepository notificationTaskRepository;
@@ -163,6 +164,70 @@ public class LoanService {
 
             log.info("Marked loan {} as overdue", loan.getId());
         }
+    }
+
+    @Transactional
+    public void processNotificationTasks() {
+        List<NotificationTask> tasks = notificationTaskRepository.findByStatusAndScheduledAtBefore(
+                NotificationStatus.PENDING,
+                LocalDateTime.now()
+        );
+
+        for (NotificationTask task : tasks) {
+            try {
+                processNotificationTask(task);
+                task.markSent();
+                notificationTaskRepository.save(task);
+
+                log.info("Processed {} notification for loan {}", task.getType(), task.getLoanId());
+            } catch (Exception ex) {
+                task.markFailed();
+
+                if (task.getRetryCount() >= MAX_NOTIFICATION_RETRIES) {
+                    task.markDead();
+                }
+
+                notificationTaskRepository.save(task);
+                log.warn("Failed to process notification task {}", task.getId(), ex);
+            }
+        }
+    }
+
+    private void processNotificationTask(NotificationTask task) {
+        Loan loan = loanRepository.findById(task.getLoanId())
+                .orElseThrow(() -> new LoanNotFoundException("Loan not found for notification task"));
+
+        switch (task.getType()) {
+            case DUE_DATE_REMINDER -> handleDueDateReminder(task, loan);
+            case OVERDUE_ALERT -> handleOverdueAlert(task, loan);
+            default -> throw new IllegalStateException("Unsupported notification type: " + task.getType());
+        }
+    }
+
+    private void handleDueDateReminder(NotificationTask task, Loan loan) {
+        if (loan.getStatus() != LoanStatus.ACTIVE) {
+            throw new IllegalStateException("Due date reminder can only be sent for active loans");
+        }
+
+        log.info(
+                "Due date reminder sent for loanId={}, userId={}, dueDate={}",
+                task.getLoanId(),
+                task.getUserId(),
+                loan.getDueDate()
+        );
+    }
+
+    private void handleOverdueAlert(NotificationTask task, Loan loan) {
+        if (loan.getStatus() != LoanStatus.OVERDUE) {
+            throw new IllegalStateException("Overdue alert can only be sent for overdue loans");
+        }
+
+        log.info(
+                "Overdue alert sent for loanId={}, userId={}, dueDate={}",
+                task.getLoanId(),
+                task.getUserId(),
+                loan.getDueDate()
+        );
     }
 
     private BigDecimal calculateFine(LocalDateTime dueDate, LocalDateTime returnedAt) {

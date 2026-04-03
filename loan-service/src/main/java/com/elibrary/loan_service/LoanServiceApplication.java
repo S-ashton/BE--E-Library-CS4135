@@ -12,3 +12,7 @@ public class LoanServiceApplication {
         SpringApplication.run(LoanServiceApplication.class, args);
     }
 }
+
+
+
+
