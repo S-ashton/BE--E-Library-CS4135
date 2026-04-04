@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/loans")
+@RequestMapping("/api/loans")
 @Tag(name = "Loans", description = "Endpoints for borrowing, returning, and viewing loan history")
 public class LoanController {
 
