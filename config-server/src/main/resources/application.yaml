@@ -12,4 +12,10 @@ spring:
     config:
       server:
         native:
-          search-locations: file:./config-repo
+          search-locations: file:./config-repo,../config-repo
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

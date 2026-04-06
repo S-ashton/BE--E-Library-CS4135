@@ -1,0 +1,58 @@
+spring:
+  http:
+    codecs:
+      log-request-details: false
+  cloud:
+    config:
+      enabled: false
+    gateway:
+      server:
+        webflux:
+          routes:
+            # Local dev routes
+            - id: user-service
+              uri: lb://user-service
+              predicates:
+                - Path=/api/auth/**,/api/users/**
+
+            - id: book-service
+              uri: lb://book-service
+              predicates:
+                - Path=/api/books/**
+
+            - id: loan-service
+              uri: lb://loan-service
+              predicates:
+                - Path=/api/loans/**
+
+            - id: recommendation-service
+              uri: lb://recommendation-service
+              predicates:
+                - Path=/api/recommendations/**
+
+server:
+  port: 8080
+
+eureka:
+  client:
+    enabled: false
+
+management:
+  endpoint:
+    gateway:
+      access: read_only
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+
+app:
+  cors:
+    allowed-origin: ${APP_FRONTEND_ORIGIN:http://localhost:3000} # Replace with the hosted url when that is ready
+  jwt:
+    secret: ${APP_JWT_SECRET}
+    issuer: ${APP_JWT_ISSUER:elibrary-user-service}
+
+# Swagger UI:  http://localhost:8080/swagger-ui.html
+# Raw spec:    http://localhost:8080/v3/api-docs
+# Route list:  http://localhost:8080/actuator/gateway/routes
