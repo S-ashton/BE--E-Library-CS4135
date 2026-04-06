@@ -1,4 +1,4 @@
-package com.elibrary.book-service.dto;
+package com.elibrary.book_service.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;

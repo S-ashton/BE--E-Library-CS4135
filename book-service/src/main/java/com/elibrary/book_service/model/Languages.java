@@ -1,4 +1,4 @@
-package com.elibrary.book-service.model;
+package com.elibrary.book_service.model;
 
 // Short list of possible languages
 public enum Languages {

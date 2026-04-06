@@ -1,4 +1,4 @@
-package com.elibrary.book-service.model;
+package com.elibrary.book_service.model;
 
 // Statuses that a book can have
 public enum Genre {
