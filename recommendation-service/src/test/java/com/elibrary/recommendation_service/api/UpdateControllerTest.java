@@ -2,6 +2,7 @@ package com.elibrary.recommendation_service.api;
 
 import com.elibrary.recommendation_service.embedding.BookEmbeddingCache;
 import com.elibrary.recommendation_service.model.Book;
+import com.elibrary.recommendation_service.model.LoanRecord;
 import com.elibrary.recommendation_service.storage.FileStorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,11 +46,20 @@ class UpdateControllerTest {
         when(storage.load(eq("data/loans.json"), eq(Map.class)))
                 .thenReturn(loans);
 
-        controller.updateLoan(Map.of("userId", "user1", "bookId", "2"));
+        // FIX: Use LoanRecord instead of Map
+        LoanRecord record = new LoanRecord(
+                100L,
+                1L,
+                2L,
+                "2025-02-14T10:23:54Z"
+        );
+
+        controller.updateLoan(record);
 
         verify(storage).save(eq("data/loans.json"), any());
-        assertTrue(loans.get("user1").contains("2"));
+        assertTrue(loans.get("1").contains("2"));
     }
 }
+
 
 

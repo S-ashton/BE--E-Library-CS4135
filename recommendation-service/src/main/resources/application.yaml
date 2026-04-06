@@ -3,3 +3,11 @@ spring:
     name: recommendation-service
   config:
     import: optional:configserver:http://localhost:8888
+
+services:
+  embedding-service:
+    url: http://localhost:8085
+  book-service:
+    url: http://localhost:8082
+  loan-service:
+    url: http://localhost:8083

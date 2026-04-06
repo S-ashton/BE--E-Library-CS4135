@@ -1,8 +1,14 @@
 package com.elibrary.recommendation_service.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Book metadata used for recommendation scoring")
 public class Book {
+    @Schema(description = "Book ID", example = "1")
     private long id;
+    @Schema(description = "Book title", example = "Deep Learning with BERT")
     private String title;
+    @Schema(description = "Book description used for embeddings")
     private String description;
 
     public Book() {}
