@@ -22,7 +22,7 @@ public class Book {
     private String description;
 
     @Column(nullable = false)
-    private LocalDate datePublished;
+    private int yearPublished;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -45,8 +45,8 @@ public class Book {
 
     protected Book() {}
 
-    public Book(String title, String author, String description, LocalDate datePublished, Genre genre, byte[] coverImage, Languages language) {
-        this(title, author, description, datePublished, genre, coverImage, language);
+    public Book(String title, String author, String description, int yearPublished, Genre genre, byte[] coverImage, Languages language) {
+        this(title, author, description, yearPublished, genre, coverImage, language);
     }
 
     public Long getId() {
@@ -77,12 +77,12 @@ public class Book {
         this.description = description;
     }
 
-    public LocalDate getDatePublished(){
-        return datePublished;
+    public int getYearPublished(){
+        return yearPublished;
     }
 
-    public void setDatePublished(LocalDate datePublished){
-        this.datePublished = datePublished;        
+    public void setYearPublished(int yearPublished){
+        this.yearPublished = yearPublished;        
     }
 
     public Genre getGenre(){
