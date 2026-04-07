@@ -1,8 +1,7 @@
 package com.elibrary.book_service.controller;
 
-import com.elibrary.loan_service.dto.BorrowRequestDTO;
-import com.elibrary.loan_service.dto.LoanDTO;
-import com.elibrary.loan_service.service.LoanService;
+import com.elibrary.book_service.dto.*;
+import com.elibrary.book_service.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
