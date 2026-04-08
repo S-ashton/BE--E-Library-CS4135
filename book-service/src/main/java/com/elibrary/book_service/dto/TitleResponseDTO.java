@@ -2,9 +2,13 @@ package com.elibrary.book_service.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import com.elibrary.book_service.model.*;
 
-@Schema(description = "Add a new title to the library")
-public class AddNewTitleRequest {
+@Schema(description = "Retrieve a single title's details from the database")
+public class TitleResponseDTO {
+
+    @Schema(description = "Unique title id", example = "1")
+    private Long id;
 
     @Schema(description = "Book title", example = "Don't Let The Pigeon Drive The Bus")
     @NotBlank(message = "A title is required")
@@ -33,9 +37,13 @@ public class AddNewTitleRequest {
     @NotBlank(message = "A language from the list must be provided")
     private Languages language;
 
-    public AddNewTitleRequest() {}
+    @Schema(description = "The current number of copies of this book that are available", example = "3")
+    private int copiesAvailable;
 
-    public AddNewTitleRequest(String title, String author, String description, int yearPublished, Genre genre, byte[] coverImage, Languages language) {
+    public TitleResponseDTO() {}
+
+    public TitleResponseDTO(Long id, String title, String author, String description, int yearPublished, Genre genre, byte[] coverImage, Languages language, int copiesAvailable) {
+        this.id = id;
         this.title = title;
         this.author = author;
         this.description = description;
@@ -43,6 +51,27 @@ public class AddNewTitleRequest {
         this.genre = genre;
         this.coverImage = coverImage;
         this.language = language;
+        this.copiesAvailable = copiesAvailable;
+    }
+
+    public TitleResponseDTO(Long id, String title, String author, String description, int yearPublished, Genre genre, byte[] coverImage, Languages language) {
+        this.id = id;
+        this.title = title;
+        this.author = author;
+        this.description = description;
+        this.yearPublished = yearPublished;
+        this.genre = genre;
+        this.coverImage = coverImage;
+        this.language = language;
+        this.copiesAvailable = 1;
+    }
+
+    public Long getId(){
+        return id;
+    }
+
+    public void setId(Long id){
+        this.id = id;
     }
 
     public String getTitle(){

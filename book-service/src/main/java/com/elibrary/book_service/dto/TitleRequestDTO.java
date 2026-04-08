@@ -2,12 +2,10 @@ package com.elibrary.book_service.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import com.elibrary.book_service.model.*;
 
-@Schema(description = "Retrieve a single title's details from the database")
-public class IndividualTitleResponse {
-
-    @Schema(description = "Unique title id", example = 1)
-    private Long id;
+@Schema(description = "Add a new title to the library")
+public class TitleRequestDTO {
 
     @Schema(description = "Book title", example = "Don't Let The Pigeon Drive The Bus")
     @NotBlank(message = "A title is required")
@@ -36,10 +34,9 @@ public class IndividualTitleResponse {
     @NotBlank(message = "A language from the list must be provided")
     private Languages language;
 
-    public IndividualTitleResponse() {}
+    public TitleRequestDTO() {}
 
-    public IndividualTitleResponse(Long id, String title, String author, String description, int yearPublished, Genre genre, byte[] coverImage, Languages language) {
-        this.id = id;
+    public TitleRequestDTO(String title, String author, String description, int yearPublished, Genre genre, byte[] coverImage, Languages language) {
         this.title = title;
         this.author = author;
         this.description = description;
@@ -47,14 +44,6 @@ public class IndividualTitleResponse {
         this.genre = genre;
         this.coverImage = coverImage;
         this.language = language;
-    }
-
-    public Long getId(){
-        return id;
-    }
-
-    public void setId(Long id){
-        this.id = id;
     }
 
     public String getTitle(){
