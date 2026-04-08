@@ -1,5 +1,7 @@
 package com.elibrary.book_service.model;
 
+import com.elibrary.book_service.dto.CopyResponseDTO;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -11,7 +13,7 @@ public class BookCopy {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name=book_id)
+    @JoinColumn(name="book_id")
     private Long book_id;
 
     @Enumerated(EnumType.STRING)
@@ -21,7 +23,8 @@ public class BookCopy {
     protected BookCopy() {}
 
     public BookCopy(Long book_id, Status status) {
-        this(book_id, status);
+        this.book_id = book_id;
+        this.status = status;
     }
 
     public Long getId() {
@@ -32,11 +35,15 @@ public class BookCopy {
         return book_id;
     }
 
-    public String getStatus() {
+    public Status getStatus() {
         return status;
     }
 
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    public CopyResponseDTO toDto(){
+        return new CopyResponseDTO(this.id, this.book_id, this.status);
     }
 }
