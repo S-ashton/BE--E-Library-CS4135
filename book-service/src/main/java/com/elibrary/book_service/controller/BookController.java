@@ -1,6 +1,7 @@
 package com.elibrary.book_service.controller;
 
 import com.elibrary.book_service.dto.*;
+import com.elibrary.book_service.model.*;
 import com.elibrary.book_service.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -33,14 +34,14 @@ public class BookController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Title added successfully",
-                    content = @Content(schema = @Schema(implementation = AddNewTitleRequest.class))),
+                    content = @Content(schema = @Schema(implementation = TitleRequestDTO.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
             @ApiResponse(responseCode = "401", description = "Missing or invalid user identity", content = @Content),
             @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)    //TODO: Clarify
     })
     @PostMapping("/addTitle")
-    public ResponseEntity<IndividualTitleResponse> addTitle(
-            @Valid @RequestBody AddNewTitleRequest request,
+    public ResponseEntity<TitleResponseDTO> addTitle(
+            @Valid @RequestBody TitleRequestDTO request,
             @Parameter(description = "Trusted identity header forwarded by gateway")
             @RequestHeader("X-Authenticated-User-Id") Long userId   //TODO: CHECK FOR LIBRARIAN 
     ) {
@@ -54,18 +55,18 @@ public class BookController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Copy added successfully",
-                    content = @Content(schema = @Schema(implementation = AddNewCopyRequest.class))),
+                    content = @Content(schema = @Schema(implementation = CopyCreationDTO.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
             @ApiResponse(responseCode = "401", description = "Missing or invalid user identity", content = @Content),
             @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)    //TODO: Clarify
     })
     @PostMapping("/addCopy")
-    public ResponseEntity<IndividualCopyResponse> addCopy(
-            @Valid @RequestBody AddNewCopyRequest request,
+    public ResponseEntity<CopyResponseDTO> addCopy(
+            @Valid @RequestBody Long titleId,
             @Parameter(description = "Trusted identity header forwarded by gateway")
             @RequestHeader("X-Authenticated-User-Id") Long userId   //TODO: CHECK FOR LIBRARIAN 
     ) {
-        TitleAddedResponse response = bookService.addCopy(userId, request); //TODO: Update
+        CopyResponseDTO response = bookService.addCopy(titleId); //TODO: Update
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -81,12 +82,12 @@ public class BookController {
             @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)    //TODO: Clarify
     })
     @PutMapping("/changeStatus")
-    public ResponseEntity<CopyResponse> changeStatus(
-            @Valid @RequestBody ChangeCopyStatusRequest request,
+    public ResponseEntity<CopyResponseDTO> changeStatus(
+            @Valid @RequestBody Long copyId, Status status,
             @Parameter(description = "Trusted identity header forwarded by gateway")
             @RequestHeader("X-Authenticated-User-Id") Long userId   //TODO: CHECK FOR LIBRARIAN 
     ) {
-        TitleAddedResponse response = bookService.changeStatus(userId, request); //TODO: Update
+        CopyResponseDTO response = bookService.changeStatus(copyId, status); //TODO: Update
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -96,14 +97,14 @@ public class BookController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Title details returned successfully",
-                    content = @Content(schema = @Schema(implementation = IndividualTitleResponse.class))),
+                    content = @Content(schema = @Schema(implementation = TitleResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
             @ApiResponse(responseCode = "401", description = "Missing or invalid user identity", content = @Content),
             @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)    //TODO: Clarify
     })
     @GetMapping("/{id}")
-    public ResponseEntity<TitleAddedResponse> getTitle(@PathVariable("id") Long titleId) {
-        TitleAddedResponse response = bookService.getTitle(userId, request); //TODO: Update
+    public ResponseEntity<TitleResponseDTO> getTitle(@PathVariable("id") Long titleId) {
+        TitleResponseDTO response = bookService.getTitle(userId, request); //TODO: Update
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -113,14 +114,19 @@ public class BookController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Title details returned successfully",
-                    content = @Content(schema = @Schema(implementation = IndividualTitleResponse.class))),
+                    content = @Content(schema = @Schema(implementation = TitleResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
             @ApiResponse(responseCode = "401", description = "Missing or invalid user identity", content = @Content),
             @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)    //TODO: Clarify
     })
-    @GetMapping("/search?keyword={keyword}&genre={genre}&year={year}&language={language}")
-    public ResponseEntity<TitleAddedResponse> getTitle(@PathVariable("id") Long titleId) {
-        TitleAddedResponse response = bookService.getTitle(userId, request); //TODO: Update
+    @GetMapping("/search")
+    public ResponseEntity<List<TitleResponseDTO>> search(
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) Genre genre,
+        @RequestParam(required = false) Integer year,
+        @RequestParam(required = false) Languages language
+    ) {
+        List<TitleResponseDTO> response = bookService.search(keyword, genre, year, language); //TODO: Update
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
