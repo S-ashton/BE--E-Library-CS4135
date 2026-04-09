@@ -71,7 +71,7 @@ services:
       - data
 
   traefik:
-    image: traefik:v3.3
+    image: traefik:latest
     container_name: traefik
     restart: unless-stopped
     environment:
