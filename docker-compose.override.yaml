@@ -1,0 +1,23 @@
+# Local development overrides loaded automatically by Docker Compose.
+
+services:
+
+  traefik:
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=elibrary-public"
+      - "--entrypoints.web.address=:80"
+      - "--ping=true"
+
+  api-gateway:
+    ports:
+      - "8080:8080"
+
+  rabbitmq:
+    ports:
+      - "15672:15672"
+
+  postgres:
+    ports:
+      - "5432:5432"

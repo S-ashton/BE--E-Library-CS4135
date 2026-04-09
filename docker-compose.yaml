@@ -1,11 +1,30 @@
 services:
 
+  # INFRASTRUCTURE
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-elibrary}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-elibrary-dev-password}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-elibrary}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - data
+
   config-server:
     build: ./config-server
     container_name: config-server
     restart: unless-stopped
-    ports:
-      - "8888:8888"
     volumes:
       - ./config-repo:/config-repo:ro
     environment:
@@ -17,14 +36,12 @@ services:
       retries: 10
       start_period: 30s
     networks:
-      - elibrary-network
+      - internal
 
   discovery-server:
     build: ./discovery-server
     container_name: discovery-server
     restart: unless-stopped
-    ports:
-      - "8761:8761"
     depends_on:
       config-server:
         condition: service_healthy
@@ -35,69 +52,80 @@ services:
       retries: 10
       start_period: 30s
     networks:
-      - elibrary-network
+      - internal
 
-  user-service:
-    build: ./user-service
-    container_name: user-service
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
     restart: unless-stopped
-    ports:
-      - "8081:8081"
     environment:
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
-      APP_JWT_SECRET: ${APP_JWT_SECRET}
-      APP_JWT_EXPIRATION_SECONDS: ${APP_JWT_EXPIRATION_SECONDS:-3600}
-      APP_JWT_ISSUER: ${APP_JWT_ISSUER:-elibrary-user-service}
-    depends_on:
-      config-server:
-        condition: service_healthy
-      discovery-server:
-        condition: service_healthy
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-elibrary}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-elibrary-dev-password}
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 40s
+      start_period: 30s
     networks:
-      - elibrary-network
+      - data
 
-  book-service:
-    build: ./book-service
-    container_name: book-service
+  traefik:
+    image: traefik:latest
+    container_name: traefik
     restart: unless-stopped
-    ports:
-      - "8082:8082"
     environment:
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
-    depends_on:
-      config-server:
-        condition: service_healthy
-      discovery-server:
-        condition: service_healthy
-      user-service:
-        condition: service_healthy
+      DOCKER_API_VERSION: "1.45"
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=elibrary-public"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.priority=10"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@example.com}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--ping=true"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8082/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "traefik healthcheck --ping"]
       interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 40s
+      retries: 5
+      start_period: 10s
     networks:
-      - elibrary-network
+      - public
+
+  # APPLICATION SERVICES
 
   api-gateway:
     build: ./api-gateway
     container_name: api-gateway
     restart: unless-stopped
-    ports:
-      - "8080:8080"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gateway.rule=Host(`${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.gateway.entrypoints=web"
+      - "traefik.http.routers.gateway.middlewares=redirect-to-https"
+      - "traefik.http.routers.gateway-secure.rule=Host(`${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.gateway-secure.entrypoints=websecure"
+      - "traefik.http.routers.gateway-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+      - "traefik.http.services.gateway.loadbalancer.server.port=8080"
     environment:
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
-      APP_JWT_SECRET: ${APP_JWT_SECRET}
+      APP_JWT_SECRET: ${APP_JWT_SECRET:-default-dev-jwt-secret-change-in-production-must-be-at-least-256-bits-long-for-hmac-sha}
       APP_JWT_ISSUER: ${APP_JWT_ISSUER:-elibrary-user-service}
     depends_on:
       config-server:
@@ -113,22 +141,80 @@ services:
       retries: 10
       start_period: 40s
     networks:
-      - elibrary-network
+      - public
+      - internal
+
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    restart: unless-stopped
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
+      APP_JWT_SECRET: ${APP_JWT_SECRET:-default-dev-jwt-secret-change-in-production-must-be-at-least-256-bits-long-for-hmac-sha}
+      APP_JWT_ISSUER: ${APP_JWT_ISSUER:-elibrary-user-service}
+      APP_JWT_EXPIRATION_SECONDS: ${APP_JWT_EXPIRATION_SECONDS:-3600}
+      DB_USERNAME: ${DB_USERNAME:-elibrary}
+      DB_PASSWORD: ${DB_PASSWORD:-elibrary-dev-password}
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    networks:
+      - internal
+      - data
+
+  book-service:
+    build: ./book-service
+    container_name: book-service
+    restart: unless-stopped
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
+      DB_USERNAME: ${DB_USERNAME:-elibrary}
+      DB_PASSWORD: ${DB_PASSWORD:-elibrary-dev-password}
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8082/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    networks:
+      - internal
+      - data
 
   loan-service:
     build: ./loan-service
     container_name: loan-service
     restart: unless-stopped
-    ports:
-      - "8083:8083"
     environment:
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
       BOOK_SERVICE_BASE_URL: http://book-service:8082
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
-      RABBITMQ_USERNAME: guest
-      RABBITMQ_PASSWORD: guest
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-elibrary}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-elibrary-dev-password}
+      DB_USERNAME: ${DB_USERNAME:-elibrary}
+      DB_PASSWORD: ${DB_PASSWORD:-elibrary-dev-password}
     depends_on:
       config-server:
         condition: service_healthy
@@ -140,6 +226,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8083/actuator/health || exit 1"]
       interval: 10s
@@ -147,17 +235,30 @@ services:
       retries: 10
       start_period: 40s
     networks:
-      - elibrary-network
+      - internal
+      - data
+
+  embedding-service:
+    build: ./embedding-service
+    container_name: embedding-service
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
+    networks:
+      - internal
 
   recommendation-service:
     build: ./recommendation-service
     container_name: recommendation-service
     restart: unless-stopped
-    ports:
-      - "8084:8084"
     environment:
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
+      EMBEDDING_SERVICE_URL: http://embedding-service:8000
     depends_on:
       config-server:
         condition: service_healthy
@@ -169,6 +270,8 @@ services:
         condition: service_healthy
       user-service:
         condition: service_healthy
+      embedding-service:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8084/actuator/health || exit 1"]
       interval: 10s
@@ -176,24 +279,24 @@ services:
       retries: 10
       start_period: 40s
     networks:
-      - elibrary-network
+      - internal
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    restart: unless-stopped
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    healthcheck:
-      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-    networks:
-      - elibrary-network
+# NETWORKS
+# public: Only the API gateway
+# internal: All services + infrastructure (called a service mesh)
+# data: Backend services + datastores (databases, message brokers)
 
 networks:
-  elibrary-network:
+  public:
+    name: elibrary-public
     driver: bridge
+  internal:
+    name: elibrary-internal
+    driver: bridge
+  data:
+    name: elibrary-data
+    driver: bridge
+
+volumes:
+  pgdata:
+  letsencrypt:
