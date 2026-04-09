@@ -38,7 +38,7 @@ public class RecommendationEngine {
     public List<Recommendation> recommend(String userId, int limit) {
 
         List<Map<String, Object>> rawBooks =
-                storage.load("books.json", List.class);
+                storage.load("data/books.json", List.class);
 
         if (rawBooks == null || rawBooks.isEmpty()) {
             return List.of();
@@ -53,7 +53,7 @@ public class RecommendationEngine {
                 .toList();
 
         Map<String, List<String>> loans =
-                storage.load("loans.json", Map.class);
+                storage.load("data/loans.json", Map.class);
 
         if (loans == null) loans = new HashMap<>();
 

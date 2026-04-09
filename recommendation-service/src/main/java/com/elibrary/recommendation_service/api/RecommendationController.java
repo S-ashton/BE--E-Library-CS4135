@@ -12,8 +12,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
-
 import java.util.List;
 
 @RestController
@@ -38,9 +36,9 @@ public class RecommendationController {
             @ApiResponse(responseCode = "404", description = "User not found", content = @Content),
             @ApiResponse(responseCode = "500", description = "Unexpected server error", content = @Content)
     })
-    @GetMapping("/{userId}")
+    @GetMapping
     public List<RecommendationResponse> getRecommendations(
-            @PathVariable String userId,
+            @RequestHeader("X-Authenticated-User-Id") String userId,
             @RequestParam(defaultValue = "5") int limit
     ) {
         return engine.recommend(userId, limit).stream()

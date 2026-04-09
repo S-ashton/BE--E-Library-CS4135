@@ -263,10 +263,17 @@ services:
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
       EMBEDDING_SERVICE_URL: http://embedding-service:8000
+      SPRING_RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-elibrary}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-elibrary-dev-password}
+    volumes:
+      - recommendation-data:/app/data
     depends_on:
       config-server:
         condition: service_healthy
       discovery-server:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       book-service:
         condition: service_healthy
@@ -304,3 +311,4 @@ networks:
 volumes:
   pgdata:
   letsencrypt:
+  recommendation-data:
