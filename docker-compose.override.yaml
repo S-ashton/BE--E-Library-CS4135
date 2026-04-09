@@ -1,0 +1,21 @@
+# Local development overrides — loaded automatically by Docker Compose.
+# DO NOT use this file in production.
+# Production: docker compose -f docker-compose.yaml up -d
+
+services:
+
+  # Expose the gateway directly on 8080 so you can hit http://localhost:8080
+  # without needing a domain name configured for Traefik.
+  api-gateway:
+    ports:
+      - "8080:8080"
+
+  # Expose RabbitMQ management UI for local inspection.
+  rabbitmq:
+    ports:
+      - "15672:15672"   # http://localhost:15672 (guest/guest)
+
+  # Expose PostgreSQL for local inspection and development.
+  postgres:
+    ports:
+      - "5432:5432"   # Connect with any PostgreSQL client locally
