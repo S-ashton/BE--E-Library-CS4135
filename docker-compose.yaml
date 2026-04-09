@@ -71,7 +71,7 @@ services:
       - data
 
   traefik:
-    image: traefik:v3.1
+    image: traefik:v3.3
     container_name: traefik
     restart: unless-stopped
     command:
@@ -81,6 +81,7 @@ services:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.priority=10"
       - "--entrypoints.websecure.address=:443"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
