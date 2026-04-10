@@ -12,9 +12,8 @@ public class BookCopy {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name="book_id")
-    private Long book_id;
+    @Column(nullable = false)
+    private Long bookId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -22,8 +21,8 @@ public class BookCopy {
 
     protected BookCopy() {}
 
-    public BookCopy(Long book_id, Status status) {
-        this.book_id = book_id;
+    public BookCopy(Long bookId, Status status) {
+        this.bookId = bookId;
         this.status = status;
     }
 
@@ -32,7 +31,7 @@ public class BookCopy {
     }
 
     public Long getBookId() {
-        return book_id;
+        return bookId;
     }
 
     public Status getStatus() {
@@ -44,6 +43,6 @@ public class BookCopy {
     }
 
     public CopyResponseDTO toDto(){
-        return new CopyResponseDTO(this.id, this.book_id, this.status);
+        return new CopyResponseDTO(this.id, this.bookId, this.status);
     }
 }
