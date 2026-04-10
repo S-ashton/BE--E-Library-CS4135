@@ -47,14 +47,19 @@ public class BookService {
     public TitleResponseDTO addTitle(TitleRequestDTO title){
         boolean duplicateExists = bookRepository.existsByTitleAndAuthorAndYearPublishedAndLanguage(
             title.getTitle(),
-            title.getAuthor(), 
-            title.getYearPublished(), 
+            title.getAuthor(),
+            title.getYearPublished(),
             title.getLanguage()
-        );
+            );
 
-        if(duplicateExists){
-            throw new TitleAlreadyExistsException("This title already exists in the system, please add another copy instead");  //TODO: just replace with adding another copy instead?
-        }
+    if(duplicateExists){
+        throw new TitleAlreadyExistsException("This title already exists in the system, please add another copy instead");  //TODO: just replace with adding another copy instead?
+    }
+        // bookRepository.findByTitleAndAuthorAndYearPublishedAndLanguage( title.getTitle(), title.getAuthor(), 
+        //     title.getYearPublished(), title.getLanguage() ).ifPresent((Optional<TitleResponseDTO>) existing -> { 
+        //         throw new TitleAlreadyExistsException( "This title already exists in the system, please add another copy instead", 
+        //         existing.getId()); 
+        //     });
 
         Book newTitle = new Book(title.getTitle(),
             title.getAuthor(), 

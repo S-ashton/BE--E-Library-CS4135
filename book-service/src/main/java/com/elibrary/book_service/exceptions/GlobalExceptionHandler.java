@@ -26,8 +26,12 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(TitleAlreadyExistsException.class)
-    public ResponseEntity<Map<String, String>> handleTitleAlreadyExists(TitleAlreadyExistsException ex) {
-        Map<String, String> error = new HashMap<>();
+    public ResponseEntity<Map<String, Object>> handleTitleAlreadyExists(TitleAlreadyExistsException ex) { 
+        Map<String, Object> error = new HashMap<>(); 
+        error.put("error", ex.getMessage()); 
+        if (ex.getExistingId() != null) { 
+            error.put("existingId", ex.getExistingId()); 
+        }
         error.put("error", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }

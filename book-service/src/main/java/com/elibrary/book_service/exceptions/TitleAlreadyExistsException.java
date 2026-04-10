@@ -1,7 +1,19 @@
 package com.elibrary.book_service.exceptions;
 
 public class TitleAlreadyExistsException extends RuntimeException {
-    public TitleAlreadyExistsException(String message){
+    private final Long existingId;
+
+    public TitleAlreadyExistsException(String message) {
         super(message);
+        this.existingId = null;
+    }
+
+    public TitleAlreadyExistsException(String message, Long existingId) {
+        super(message);
+        this.existingId = existingId;
+    }
+
+    public Long getExistingId() {
+        return existingId;
     }
 }

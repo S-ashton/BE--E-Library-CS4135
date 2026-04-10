@@ -8,10 +8,12 @@ import com.elibrary.book_service.dto.TitleResponseDTO;
 
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "books")
 @Document(indexName = "books", createIndex = true)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Book {
 
     @Id

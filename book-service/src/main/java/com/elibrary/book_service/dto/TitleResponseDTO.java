@@ -3,6 +3,8 @@ package com.elibrary.book_service.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import com.elibrary.book_service.model.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 @Schema(description = "Retrieve a single title's details from the database")
 public class TitleResponseDTO {
@@ -23,18 +25,18 @@ public class TitleResponseDTO {
     private String description;
 
     @Schema(description = "The year the book was published", example = "2005")
-    @NotBlank(message = "Year of publication must be provided")
+    @Positive(message = "Year of publication must be provided")
     private int yearPublished;
 
     @Schema(description = "The most prevalent genre of the book", example = "CHILDREN")
-    @NotBlank(message = "A genre from the list must be provided")
+    @NotNull(message = "A genre from the list must be provided")
     private Genre genre;
 
     @Schema(description = "The cover image for the book")
     private byte[] coverImage;
 
     @Schema(description = "The primary language in which the book is written", example = "ENGLISH")
-    @NotBlank(message = "A language from the list must be provided")
+    @NotNull(message = "A language from the list must be provided")
     private Languages language;
 
     @Schema(description = "The current number of copies of this book that are available", example = "3")

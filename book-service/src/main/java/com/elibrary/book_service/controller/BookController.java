@@ -123,7 +123,7 @@ public class BookController {
     public ResponseEntity<List<TitleResponseDTO>> search(
         @RequestParam(required = false) String keyword,
         @RequestParam(required = false) Genre genre,
-        @RequestParam(required = false) Integer year,
+        @RequestParam(defaultValue = "0") int year,
         @RequestParam(required = false) Languages language
     ) throws IOException {
         List<TitleResponseDTO> response = bookService.search(keyword, genre, year, language); //TODO: Update
