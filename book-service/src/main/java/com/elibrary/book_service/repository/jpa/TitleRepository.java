@@ -11,7 +11,5 @@ public interface TitleRepository extends JpaRepository<Book, Integer>{
 
     Optional<Book> findByTitleAndAuthorAndYearPublishedAndLanguage(String title, String author, int yearPublished, Languages language);
 
-    Optional findByTitleAndAuthorAndYearPublishedAndLanguage(String title, String author, int yearPublished, Languages language);
-
     Optional<Book> findById(Long titleId);
 }
