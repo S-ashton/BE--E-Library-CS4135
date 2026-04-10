@@ -9,11 +9,9 @@ import com.elibrary.book_service.dto.TitleResponseDTO;
 
 import jakarta.persistence.*;
 
-//TODO: Implement tags/keywords and stored procedure for copiesAvailable
-
 @Entity
 @Table(name = "books")
-@Document(indexName = "books")
+@Document(indexName = "books", createIndex = true)
 public class Book {
 
     @Id
