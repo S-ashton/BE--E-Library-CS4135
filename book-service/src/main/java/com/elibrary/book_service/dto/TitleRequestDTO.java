@@ -2,6 +2,7 @@ package com.elibrary.book_service.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import com.elibrary.book_service.model.*;
 
 @Schema(description = "Add a new title to the library")
@@ -20,18 +21,18 @@ public class TitleRequestDTO {
     private String description;
 
     @Schema(description = "The year the book was published", example = "2005")
-    @NotBlank(message = "Year of publication must be provided")
-    private int yearPublished;
+    @NotNull(message = "Year of publication must be provided")
+    private Integer yearPublished;
 
     @Schema(description = "The most prevalent genre of the book", example = "CHILDREN")
-    @NotBlank(message = "A genre from the list must be provided")
+    @NotNull(message = "A genre from the list must be provided")
     private Genre genre;
 
     @Schema(description = "The cover image for the book")
     private byte[] coverImage;
 
     @Schema(description = "The primary language in which the book is written", example = "ENGLISH")
-    @NotBlank(message = "A language from the list must be provided")
+    @NotNull(message = "A language from the list must be provided")
     private Languages language;
 
     public TitleRequestDTO() {}
@@ -70,11 +71,11 @@ public class TitleRequestDTO {
         this.description = description;
     }
 
-    public int getYearPublished(){
+    public Integer getYearPublished(){
         return yearPublished;
     }
 
-    public void setYearPublished(int yearPublished){
+    public void setYearPublished(Integer yearPublished){
         this.yearPublished = yearPublished;        
     }
 

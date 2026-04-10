@@ -45,21 +45,17 @@ public class BookService {
 
     @Transactional
     public TitleResponseDTO addTitle(TitleRequestDTO title){
-        boolean duplicateExists = bookRepository.existsByTitleAndAuthorAndYearPublishedAndLanguage(
+        bookRepository.findByTitleAndAuthorAndYearPublishedAndLanguage(
             title.getTitle(),
             title.getAuthor(),
             title.getYearPublished(),
             title.getLanguage()
+        ).ifPresent(existing -> {
+            throw new TitleAlreadyExistsException(
+                "This title already exists in the system, please add another copy instead",
+                existing.getId()
             );
-
-    if(duplicateExists){
-        throw new TitleAlreadyExistsException("This title already exists in the system, please add another copy instead");  //TODO: just replace with adding another copy instead?
-    }
-        // bookRepository.findByTitleAndAuthorAndYearPublishedAndLanguage( title.getTitle(), title.getAuthor(), 
-        //     title.getYearPublished(), title.getLanguage() ).ifPresent((Optional<TitleResponseDTO>) existing -> { 
-        //         throw new TitleAlreadyExistsException( "This title already exists in the system, please add another copy instead", 
-        //         existing.getId()); 
-        //     });
+        });
 
         Book newTitle = new Book(title.getTitle(),
             title.getAuthor(), 
@@ -131,7 +127,7 @@ public class BookService {
     }
 
     @Transactional
-    public List<TitleResponseDTO> search(String keyword, Genre genre, int year, Languages language) throws IOException {
+    public List<TitleResponseDTO> search(String keyword, Genre genre, Integer year, Languages language) throws IOException {
 
         // Build filter clauses
         List<Query> filters = new ArrayList<>();
@@ -154,7 +150,7 @@ public class BookService {
             ));
         }
 
-        if (year != 0) {
+        if (year != null && year != 0) {
             filters.add(Query.of(q -> q
                 .term(t -> t
                     .field("yearPublished")

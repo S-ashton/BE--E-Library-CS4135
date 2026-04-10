@@ -17,28 +17,27 @@ import java.util.Map;
 @Component
 public class JsonAccessDeniedHandler implements AccessDeniedHandler {
 
-private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
-public JsonAccessDeniedHandler(ObjectMapper objectMapper) {
-    this.objectMapper = objectMapper;
-}
+    public JsonAccessDeniedHandler(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
-@Override
-public void handle(
-    HttpServletRequest request,
-    HttpServletResponse response,
-    AccessDeniedException accessDeniedException
-) throws IOException {
-    HttpStatus status = HttpStatus.FORBIDDEN;
-    Map<String, Object> body = new LinkedHashMap<>();
-    body.put("timestamp", Instant.now().toString());
-    body.put("status", status.value());
-    body.put("error", status.getReasonPhrase());
-    body.put("message", "Access denied");
+    @Override
+    public void handle(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        AccessDeniedException accessDeniedException
+    ) throws IOException {
+        HttpStatus status = HttpStatus.FORBIDDEN;
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", Instant.now().toString());
+        body.put("status", status.value());
+        body.put("error", status.getReasonPhrase());
+        body.put("message", "Access denied");
 
-    response.setStatus(status.value());
-    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-    objectMapper.writeValue(response.getOutputStream(), body);
-}
-
+        response.setStatus(status.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        objectMapper.writeValue(response.getOutputStream(), body);
+    }
 }
