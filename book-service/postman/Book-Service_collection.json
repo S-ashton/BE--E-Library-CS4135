@@ -1,0 +1,1159 @@
+{
+  "info": {
+    "name": "Book Service Testing",
+    "_postman_id": "book-service-gateway-tests-001",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "End-to-end tests for the book-service routed through the API gateway (port 8080). The gateway validates the JWT, strips incoming X-Authenticated-* headers, and forwards trusted identity to the service. Run folders in order as later ones depend on data created by earlier ones."
+  },
+  "variable": [
+    { "key": "gatewayUrl", "value": "http://localhost:8080" },
+    { "key": "userEmail", "value": "booktest-user@elibrary.ie" },
+    { "key": "userPassword", "value": "Test@12345" },
+    { "key": "staffEmail", "value": "booktest-staff@elibrary.ie" },
+    { "key": "staffPassword", "value": "Test@12345" },
+    { "key": "adminEmail", "value": "booktest-admin@elibrary.ie" },
+    { "key": "adminPassword", "value": "Test@12345" },
+    { "key": "userToken", "value": "" },
+    { "key": "staffToken", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "createdTitleId", "value": "" },
+    { "key": "createdCopyId", "value": "" },
+    { "key": "adminTitleId", "value": "" },
+    { "key": "adminCopyId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "0 - Setup",
+      "description": "Registers USER, STAFF and ADMIN accounts then logs in to capture JWT tokens. 201 means newly created, 409 means the account already exists from a previous run - both are acceptable.",
+      "item": [
+        {
+          "name": "Register USER account",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/register", "host": ["{{gatewayUrl}}"], "path": ["api", "auth", "register"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\",\n  \"role\": \"USER\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('USER account ready (201 or 409)', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register STAFF account",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/register", "host": ["{{gatewayUrl}}"], "path": ["api", "auth", "register"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{staffEmail}}\",\n  \"password\": \"{{staffPassword}}\",\n  \"role\": \"STAFF\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('STAFF account ready (201 or 409)', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register ADMIN account",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/register", "host": ["{{gatewayUrl}}"], "path": ["api", "auth", "register"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\",\n  \"role\": \"ADMIN\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('ADMIN account ready (201 or 409)', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login as USER",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/login", "host": ["{{gatewayUrl}}"], "path": ["api", "auth", "login"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('USER login returns 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response contains JWT token', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('token');",
+                  "    pm.expect(body.token).to.be.a('string').and.not.empty;",
+                  "    pm.collectionVariables.set('userToken', body.token);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login as STAFF",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/login", "host": ["{{gatewayUrl}}"], "path": ["api", "auth", "login"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{staffEmail}}\",\n  \"password\": \"{{staffPassword}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('STAFF login returns 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response contains JWT token', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('token');",
+                  "    pm.expect(body.token).to.be.a('string').and.not.empty;",
+                  "    pm.collectionVariables.set('staffToken', body.token);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login as ADMIN",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/login", "host": ["{{gatewayUrl}}"], "path": ["api", "auth", "login"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('ADMIN login returns 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response contains JWT token', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('token');",
+                  "    pm.expect(body.token).to.be.a('string').and.not.empty;",
+                  "    pm.collectionVariables.set('adminToken', body.token);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1 - Authentication",
+      "description": "Verifies unauthenticated and malformed requests are rejected at the gateway.",
+      "item": [
+        {
+          "name": "Search with no token",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/books/search", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "search"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('No token returns 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test('Error body has correct structure', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('status', 401);",
+                  "    pm.expect(body).to.have.property('error');",
+                  "    pm.expect(body).to.have.property('message');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add title with no token",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "addTitle"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Unauthorised\",\n  \"author\": \"Nobody\",\n  \"description\": \"No auth\",\n  \"yearPublished\": 2024,\n  \"genre\": \"FANTASY\",\n  \"language\": \"ENGLISH\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('No token on POST returns 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Spoofed identity headers without bearer token",
+          "description": "Gateway strips incoming X-Authenticated-* headers. Sending them without a valid token must still return 401.",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/books/search", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "search"] },
+            "header": [
+              { "key": "X-Authenticated-User", "value": "hacker@evil.com" },
+              { "key": "X-Authenticated-Role", "value": "ADMIN" },
+              { "key": "X-Authenticated-User-Id", "value": "1" }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Spoofed headers without bearer token rejected with 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invalid token",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/books/search", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "search"] },
+            "header": [{ "key": "Authorization", "value": "Bearer this.is.not.a.valid.jwt" }]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Malformed token returns 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expired or tampered token",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/books/search", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "search"] },
+            "header": [{ "key": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwicm9sZSI6IlVTRVIiLCJ1c2VySWQiOjEsImlhdCI6MTYwMDAwMDAwMCwiZXhwIjoxNjAwMDAwMDAxfQ.invalidsignature" }]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expired or tampered token returns 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2 - Catalogue Setup (STAFF)",
+      "description": "STAFF creates a title and a copy. IDs are stored as collection variables for all subsequent folders.",
+      "item": [
+        {
+          "name": "STAFF add title",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "addTitle"] },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{staffToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Great Gatsby (GW)\",\n  \"author\": \"F. Scott Fitzgerald\",\n  \"description\": \"A novel about the American dream set in the Jazz Age\",\n  \"yearPublished\": 1925,\n  \"genre\": \"FANTASY\",\n  \"language\": \"ENGLISH\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('STAFF can add or retrieve title', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('createdTitleId', body.id);",
+                  "} else {",
+                  "    pm.collectionVariables.set('createdTitleId', body.existingId);",
+                  "}",
+                  "pm.test('Title ID is stored', function () {",
+                  "    pm.expect(pm.collectionVariables.get('createdTitleId')).to.be.ok;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "STAFF add copy",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addCopy", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "addCopy"] },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{staffToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{{createdTitleId}}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('STAFF can add a copy', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Copy is AVAILABLE and ID is stored', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('id');",
+                  "    pm.expect(body.status).to.eql('AVAILABLE');",
+                  "    pm.collectionVariables.set('createdCopyId', body.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3 - Read Access",
+      "description": "All authenticated roles can read catalogue data. Covers search variants, get by ID, bulk ID lookup, and available copy lookup.",
+      "item": [
+        {
+          "name": "USER search all books",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/books/search", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "search"] },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('USER search returns 200/201', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Response is an array', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "USER search by keyword",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/search?keyword=gatsby",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "books", "search"],
+              "query": [{ "key": "keyword", "value": "gatsby" }]
+            },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Keyword search returns 200/201', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Result is an array containing the created title', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an('array');",
+                  "    const found = body.some(b => b.title === 'The Great Gatsby (GW)');",
+                  "    pm.expect(found).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "USER search by genre",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/search?genre=FANTASY",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "books", "search"],
+              "query": [{ "key": "genre", "value": "FANTASY" }]
+            },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Genre filter returns 200/201', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Response is an array', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "USER search by year",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/search?year=1925",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "books", "search"],
+              "query": [{ "key": "year", "value": "1925" }]
+            },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Year filter returns 200/201', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Response is an array', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "USER search by language",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/search?language=ENGLISH",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "books", "search"],
+              "query": [{ "key": "language", "value": "ENGLISH" }]
+            },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Language filter returns 200/201', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Response is an array', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "USER get title by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/books/{{createdTitleId}}", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "{{createdTitleId}}"] },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Get title by ID returns 200/201', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Returned title is correct', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.title).to.eql('The Great Gatsby (GW)');",
+                  "    pm.expect(body.author).to.eql('F. Scott Fitzgerald');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "USER get nonexistent title",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/books/999999", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "999999"] },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Nonexistent title returns 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test('Error body has expected fields', function () {",
+                  "    pm.expect(pm.response.json()).to.have.property('error');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "USER get titles by IDs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/titlesByIds?bookIds={{createdTitleId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "books", "titlesByIds"],
+              "query": [{ "key": "bookIds", "value": "{{createdTitleId}}" }]
+            },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Titles by IDs returns 200/201', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Response is an array with the requested title', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an('array').with.lengthOf(1);",
+                  "    pm.expect(body[0].title).to.eql('The Great Gatsby (GW)');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "USER get available copy",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/getAvailableCopy?bookId={{createdTitleId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "books", "getAvailableCopy"],
+              "query": [{ "key": "bookId", "value": "{{createdTitleId}}" }]
+            },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Get available copy returns 200/201', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Response has an AVAILABLE copy', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('id');",
+                  "    pm.expect(body.status).to.eql('AVAILABLE');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4 - Authorization: USER Cannot Write",
+      "description": "USER role is read-only. All write endpoints must return 403.",
+      "item": [
+        {
+          "name": "USER add title",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "addTitle"] },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Forbidden\",\n  \"author\": \"User\",\n  \"description\": \"Should be blocked\",\n  \"yearPublished\": 2024,\n  \"genre\": \"FANTASY\",\n  \"language\": \"ENGLISH\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('USER addTitle returns 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test('Forbidden response has correct structure', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('status', 403);",
+                  "    pm.expect(body.message).to.eql('Access denied');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "USER add copy",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addCopy", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "addCopy"] },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{{createdTitleId}}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('USER addCopy returns 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "USER change status",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/changeStatus?status=ON_LOAN",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "books", "changeStatus"],
+              "query": [{ "key": "status", "value": "ON_LOAN" }]
+            },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{{createdCopyId}}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('USER changeStatus returns 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5 - STAFF Write Operations",
+      "description": "STAFF exercises all write operations including duplicate handling and copy status changes.",
+      "item": [
+        {
+          "name": "STAFF add duplicate title",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "addTitle"] },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{staffToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Great Gatsby (GW)\",\n  \"author\": \"F. Scott Fitzgerald\",\n  \"description\": \"Duplicate attempt\",\n  \"yearPublished\": 1925,\n  \"genre\": \"FANTASY\",\n  \"language\": \"ENGLISH\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Duplicate title returns 409', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "STAFF add second copy",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addCopy", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "addCopy"] },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{staffToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{{createdTitleId}}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('STAFF can add a second copy', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Second copy is AVAILABLE', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql('AVAILABLE');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "STAFF change copy status to ON_LOAN",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/changeStatus?status=ON_LOAN",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "books", "changeStatus"],
+              "query": [{ "key": "status", "value": "ON_LOAN" }]
+            },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{staffToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{{createdCopyId}}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('STAFF can mark copy as ON_LOAN', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Copy status is ON_LOAN', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('id');",
+                  "    pm.expect(body.status).to.eql('ON_LOAN');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "STAFF change copy status to AVAILABLE",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/changeStatus?status=AVAILABLE",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "books", "changeStatus"],
+              "query": [{ "key": "status", "value": "AVAILABLE" }]
+            },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{staffToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{{createdCopyId}}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('STAFF can restore copy to AVAILABLE', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Copy status is AVAILABLE', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql('AVAILABLE');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "STAFF get titles by IDs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/titlesByIds?bookIds={{createdTitleId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "books", "titlesByIds"],
+              "query": [{ "key": "bookIds", "value": "{{createdTitleId}}" }]
+            },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{staffToken}}" }] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('STAFF titlesByIds returns 200/201', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Response is an array with the requested title', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an('array');",
+                  "    pm.expect(body[0].title).to.eql('The Great Gatsby (GW)');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "STAFF get available copy",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/getAvailableCopy?bookId={{createdTitleId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "books", "getAvailableCopy"],
+              "query": [{ "key": "bookId", "value": "{{createdTitleId}}" }]
+            },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{staffToken}}" }] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('STAFF getAvailableCopy returns 200/201', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Response has an AVAILABLE copy', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('id');",
+                  "    pm.expect(body.status).to.eql('AVAILABLE');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6 - ADMIN Role",
+      "description": "ADMIN has the same write permissions as STAFF. Tests verify ADMIN can perform all catalogue operations independently.",
+      "item": [
+        {
+          "name": "ADMIN add title",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "addTitle"] },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Animal Farm (GW)\",\n  \"author\": \"George Orwell\",\n  \"description\": \"A satirical allegory about totalitarianism\",\n  \"yearPublished\": 1945,\n  \"genre\": \"SCIFI\",\n  \"language\": \"ENGLISH\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('ADMIN can add or retrieve title', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('adminTitleId', body.id);",
+                  "} else {",
+                  "    pm.collectionVariables.set('adminTitleId', body.existingId);",
+                  "}",
+                  "pm.test('Admin title ID is stored', function () {",
+                  "    pm.expect(pm.collectionVariables.get('adminTitleId')).to.be.ok;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN add copy",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addCopy", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "addCopy"] },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{{adminTitleId}}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('ADMIN can add a copy', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Copy is AVAILABLE', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('id');",
+                  "    pm.expect(body.status).to.eql('AVAILABLE');",
+                  "    pm.collectionVariables.set('adminCopyId', body.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN change copy status",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/changeStatus?status=UNAVAILABLE",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "books", "changeStatus"],
+              "query": [{ "key": "status", "value": "UNAVAILABLE" }]
+            },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{{adminCopyId}}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('ADMIN can change copy status', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Copy status is UNAVAILABLE', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql('UNAVAILABLE');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN search all books",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/books/search", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "search"] },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}" }] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('ADMIN search returns 200/201', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Response is an array', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN get title by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/books/{{adminTitleId}}", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "{{adminTitleId}}"] },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}" }] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('ADMIN get title by ID returns 200/201', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Returned title is correct', function () {",
+                  "    pm.expect(pm.response.json().title).to.eql('Animal Farm (GW)');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "7 - Validation",
+      "description": "Request body validation on write endpoints.",
+      "item": [
+        {
+          "name": "Add title with empty body",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "addTitle"] },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{staffToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Empty body returns 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add title with missing yearPublished",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "addTitle"] },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{staffToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Valid Title\",\n  \"author\": \"Author\",\n  \"description\": \"Description\",\n  \"genre\": \"FANTASY\",\n  \"language\": \"ENGLISH\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Missing yearPublished returns 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "8 - Public Endpoints",
+      "description": "Endpoints that are accessible without a token.",
+      "item": [
+        {
+          "name": "Gateway actuator health",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/actuator/health", "host": ["{{gatewayUrl}}"], "path": ["actuator", "health"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Gateway health is UP', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().status).to.eql('UP');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

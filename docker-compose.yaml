@@ -72,12 +72,15 @@ services:
     environment:
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
     depends_on:
       config-server:
         condition: service_healthy
       discovery-server:
         condition: service_healthy
       user-service:
+        condition: service_healthy
+      elasticsearch:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8082/actuator/health || exit 1"]
@@ -190,6 +193,24 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 30s
+    networks:
+      - elibrary-network
+
+  elasticsearch:
+    image: elasticsearch:8.17.0
+    container_name: elasticsearch
+    restart: unless-stopped
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
       start_period: 30s
     networks:
       - elibrary-network
