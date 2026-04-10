@@ -5,7 +5,6 @@ import com.elibrary.book_service.model.*;
 import com.elibrary.book_service.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -16,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -45,7 +45,7 @@ public class BookController {
             @Parameter(description = "Trusted identity header forwarded by gateway")
             @RequestHeader("X-Authenticated-User-Id") Long userId   //TODO: CHECK FOR LIBRARIAN 
     ) {
-        TitleAddedResponse response = bookService.addTitle(userId, request); //TODO: Update
+        TitleResponseDTO response = bookService.addTitle(request); //TODO: Update
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -76,7 +76,7 @@ public class BookController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Status updated successfully",
-                    content = @Content(schema = @Schema(implementation = ChangeCopyStatusRequest.class))),
+                    content = @Content(schema = @Schema(implementation = CopyResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
             @ApiResponse(responseCode = "401", description = "Missing or invalid user identity", content = @Content),
             @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)    //TODO: Clarify
@@ -104,11 +104,11 @@ public class BookController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<TitleResponseDTO> getTitle(@PathVariable("id") Long titleId) {
-        TitleResponseDTO response = bookService.getTitle(userId, request); //TODO: Update
+        TitleResponseDTO response = bookService.getTitle(titleId); //TODO: Update
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @Operation(     //TODO: DTOs need to be added to for this one but endpoint should be correct
+    @Operation(
             summary = "Retrieve search results",
             description = "Retrieve a list of titles that fit the search criteria"
     )
@@ -125,8 +125,45 @@ public class BookController {
         @RequestParam(required = false) Genre genre,
         @RequestParam(required = false) Integer year,
         @RequestParam(required = false) Languages language
-    ) {
+    ) throws IOException {
         List<TitleResponseDTO> response = bookService.search(keyword, genre, year, language); //TODO: Update
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Operation(
+        summary = "Retrieve a list of titles from ids",
+        description = "When given a list of title ids, retrieve the relevant objects from the DB and return them"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Title details returned successfully",
+                    content = @Content(schema = @Schema(implementation = TitleResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid user identity", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)    //TODO: Clarify
+    })
+    @GetMapping("/titlesByIds")
+    public ResponseEntity<List<TitleResponseDTO>> titlesFromIds(
+        @Valid @RequestBody List<Long> bookIds
+    ){
+        List<TitleResponseDTO> response = bookService.titlesByIds(bookIds); 
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Operation(
+        summary = "Retrieve an available copy of a title",
+        description = "Find an available copy of a title from the given title id and return its details"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Copy details returned successfully",
+                    content = @Content(schema = @Schema(implementation = CopyResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)    //TODO: Clarify
+    })
+    @GetMapping("/getAvailableCopy")
+    public ResponseEntity<CopyResponseDTO> getAvailableCopy(
+        @Valid @RequestBody Long bookId
+    ){
+        CopyResponseDTO response = bookService.getAvailableCopy(bookId); 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
