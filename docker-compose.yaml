@@ -198,7 +198,7 @@ services:
       - elibrary-network
 
   elasticsearch:
-    image: elasticsearch:5.1.2
+    image: elasticsearch:8.17.0
     container_name: elasticsearch
     restart: unless-stopped
     ports:

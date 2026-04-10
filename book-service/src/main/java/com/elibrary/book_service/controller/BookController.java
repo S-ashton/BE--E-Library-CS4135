@@ -143,7 +143,7 @@ public class BookController {
     })
     @GetMapping("/titlesByIds")
     public ResponseEntity<List<TitleResponseDTO>> titlesFromIds(
-        @Valid @RequestBody List<Long> bookIds
+        @RequestParam List<Long> bookIds
     ){
         List<TitleResponseDTO> response = bookService.titlesByIds(bookIds); 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -161,7 +161,7 @@ public class BookController {
     })
     @GetMapping("/getAvailableCopy")
     public ResponseEntity<CopyResponseDTO> getAvailableCopy(
-        @Valid @RequestBody Long bookId
+        @RequestParam Long bookId
     ){
         CopyResponseDTO response = bookService.getAvailableCopy(bookId); 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);

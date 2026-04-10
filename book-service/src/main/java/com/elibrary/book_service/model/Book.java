@@ -5,13 +5,14 @@ import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import com.elibrary.book_service.dto.TitleResponseDTO;
-
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "books")
 @Document(indexName = "books", createIndex = true)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Book {
 
     @Id
