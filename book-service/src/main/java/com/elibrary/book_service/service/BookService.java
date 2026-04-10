@@ -1,13 +1,14 @@
 package com.elibrary.book_service.service;
 
 import com.elibrary.book_service.dto.*;
-import com.elibrary.book_service.repository.BookRepository;
-import com.elibrary.book_service.repository.CopyRepository;
-import com.elibrary.book_service.repository.ESRepository;
+import com.elibrary.book_service.repository.elasticsearch.ElasticsearchRepo;
+import com.elibrary.book_service.repository.jpa.CopyRepository;
+import com.elibrary.book_service.repository.jpa.TitleRepository;
 
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 
 import com.elibrary.book_service.model.*;
+import com.elibrary.book_service.exceptions.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.stereotype.Service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.query_dsl.*;
@@ -24,14 +26,15 @@ import co.elastic.clients.elasticsearch.core.search.Hit;
 import java.util.stream.Collectors;
 import jakarta.transaction.Transactional;
 
+@Service
 public class BookService {
 
-    private final BookRepository bookRepository;
+    private final TitleRepository bookRepository;
     private final CopyRepository copyRepository;
-    private final ESRepository esRepository;
+    private final ElasticsearchRepo esRepository;
     private final ElasticsearchClient esClient;
 
-    public BookService(BookRepository bookRepository, CopyRepository copyRepository, ESRepository esRepository, ElasticsearchClient esClient){
+    public BookService(TitleRepository bookRepository, CopyRepository copyRepository, ElasticsearchRepo esRepository, ElasticsearchClient esClient){
         this.bookRepository = bookRepository;
         this.copyRepository = copyRepository;
         this.esRepository = esRepository;
@@ -42,7 +45,7 @@ public class BookService {
 
     @Transactional
     public TitleResponseDTO addTitle(TitleRequestDTO title){
-        boolean duplicateExists = bookRepository.existsByTitleAndAuthorAndYearAndLanguage(
+        boolean duplicateExists = bookRepository.existsByTitleAndAuthorAndYearPublishedAndLanguage(
             title.getTitle(),
             title.getAuthor(), 
             title.getYearPublished(), 
@@ -73,14 +76,14 @@ public class BookService {
 
     @Transactional
     public CopyResponseDTO addCopy(Long bookId){
-        BookCopy newCopy = new BookCopy(bookId, Status.AVAILABLE).orElseThrow(
-            TitleNotFoundException::new  //TODO: Implement exception
-        );
+        Book book = bookRepository.findById(bookId)
+            .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists"));
+
+        BookCopy newCopy = new BookCopy(bookId, Status.AVAILABLE);
 
         copyRepository.save(newCopy);
 
-        int currentNumCopies = copyRepository.countByIdAndAvailability(bookId, Status.AVAILABLE);
-        Book book = bookRepository.findByIdLong(bookId);
+        int currentNumCopies = copyRepository.countByIdAndStatus(bookId, Status.AVAILABLE);
         book.setCopiesAvailable(currentNumCopies);
         bookRepository.save(book);
         esRepository.save(book);
@@ -90,18 +93,18 @@ public class BookService {
 
     @Transactional
     public CopyResponseDTO changeStatus(Long copyId, Status status){
-        BookCopy currentCopy = copyRepository.findByIdLong(copyId).orElseThrow(
-            CopyNotFoundException::new  //TODO: Implement exception
+        BookCopy currentCopy = copyRepository.findById(copyId)
+            .orElseThrow(() -> new CopyNotFoundException("No copy with this ID exists")
         );
 
         if(currentCopy.getStatus().equals(status)){
-            throw new statusMatchingException;  //TODO: Implement exception
+            throw new StatusMatchingException("This copy already has this status");  //TODO: Implement exception
         }else{
             currentCopy.setStatus(status);
             currentCopy = copyRepository.save(currentCopy);
 
-            int currentNumCopies = copyRepository.countByIdAndAvailability(currentCopy.getBookId(), Status.AVAILABLE);
-            Book book = bookRepository.findByIdLong(currentCopy.getBookId());
+            int currentNumCopies = copyRepository.countByIdAndStatus(currentCopy.getBookId(), Status.AVAILABLE);
+            Book book = bookRepository.findById(currentCopy.getBookId()).get();
             book.setCopiesAvailable(currentNumCopies);
             bookRepository.save(book);
             esRepository.save(book);
@@ -114,8 +117,8 @@ public class BookService {
 
     @Transactional
     public TitleResponseDTO getTitle(Long titleId){
-        Book title = bookRepository.findByIdLong(titleId).orElseThrow(
-            TitleNotFoundException::new //TODO: Implement exception
+        Book title = bookRepository.findById(titleId)
+            .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists")
         );
 
         return title.toDto();
@@ -200,5 +203,21 @@ public class BookService {
                           .collect(Collectors.toList());
 
         return books;
+    }
+
+    public List<TitleResponseDTO> titlesByIds(List<Long> bookIds){
+        List<TitleResponseDTO> books = new ArrayList<>();
+        for (Long num : bookIds) {      //TODO: Add exception for non-existent title/id
+            Book book = bookRepository.findById(num)
+                .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists"));
+            books.add(book.toDto());
+        }
+        return books;
+    }
+
+    public CopyResponseDTO getAvailableCopy(Long bookId){
+        List<BookCopy> availableCopies = copyRepository.findByBookIdAndStatus(bookId, Status.AVAILABLE)
+            .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists"));;
+        return availableCopies.get(0).toDto();
     }
 }
