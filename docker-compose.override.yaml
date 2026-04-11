@@ -1,9 +1,25 @@
 # Local development overrides loaded automatically by Docker Compose.
+#
+# To run book-service outside Docker (e.g. from your IDE) instead of in a container:
+#   1. Start infrastructure only:
+#        docker compose up postgres elasticsearch rabbitmq config-server discovery-server -d
+#   2. Run book-service with the local Spring profile:
+#        ./mvnw spring-boot:run -pl book-service -Dspring-boot.run.profiles=local
+#      The local profile (application-local.yaml) connects to localhost:5432 / localhost:9200.
 
 services:
   api-gateway:
     ports:
       - "8080:8080"
+
+  book-service:
+    ports:
+      - "8082:8082"
+
+  minio:
+    ports:
+      - "9000:9000"   # MinIO object storage API
+      - "9001:9001"   # MinIO console (http://localhost:9001)
 
   rabbitmq:
     ports:

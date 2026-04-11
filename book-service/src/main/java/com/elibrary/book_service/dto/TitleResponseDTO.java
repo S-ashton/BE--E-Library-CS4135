@@ -32,8 +32,8 @@ public class TitleResponseDTO {
     @NotNull(message = "A genre from the list must be provided")
     private Genre genre;
 
-    @Schema(description = "The cover image for the book")
-    private byte[] coverImage;
+    @Schema(description = "The cover image URL for the book")
+    private String coverImageUrl;
 
     @Schema(description = "The primary language in which the book is written", example = "ENGLISH")
     @NotNull(message = "A language from the list must be provided")
@@ -44,26 +44,26 @@ public class TitleResponseDTO {
 
     public TitleResponseDTO() {}
 
-    public TitleResponseDTO(Long id, String title, String author, String description, int yearPublished, Genre genre, byte[] coverImage, Languages language, int copiesAvailable) {
+    public TitleResponseDTO(Long id, String title, String author, String description, int yearPublished, Genre genre, String coverImageUrl, Languages language, int copiesAvailable) {
         this.id = id;
         this.title = title;
         this.author = author;
         this.description = description;
         this.yearPublished = yearPublished;
         this.genre = genre;
-        this.coverImage = coverImage;
+        this.coverImageUrl = coverImageUrl;
         this.language = language;
         this.copiesAvailable = copiesAvailable;
     }
 
-    public TitleResponseDTO(Long id, String title, String author, String description, int yearPublished, Genre genre, byte[] coverImage, Languages language) {
+    public TitleResponseDTO(Long id, String title, String author, String description, int yearPublished, Genre genre, String coverImageUrl, Languages language) {
         this.id = id;
         this.title = title;
         this.author = author;
         this.description = description;
         this.yearPublished = yearPublished;
         this.genre = genre;
-        this.coverImage = coverImage;
+        this.coverImageUrl = coverImageUrl;
         this.language = language;
         this.copiesAvailable = 1;
     }
@@ -116,12 +116,12 @@ public class TitleResponseDTO {
         this.genre = genre;
     }
 
-    public byte[] getCoverImage(){
-        return coverImage;
+    public String getCoverImageUrl(){
+        return coverImageUrl;
     }
 
-    public void setCoverImage(byte[] coverImage){
-        this.coverImage = coverImage;
+    public void setCoverImageUrl(String coverImageUrl){
+        this.coverImageUrl = coverImageUrl;
     }
 
     public Languages getLanguage(){

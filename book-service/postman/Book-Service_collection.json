@@ -231,10 +231,17 @@
           "request": {
             "method": "POST",
             "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "addTitle"] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Unauthorised\",\n  \"author\": \"Nobody\",\n  \"description\": \"No auth\",\n  \"yearPublished\": 2024,\n  \"genre\": \"FANTASY\",\n  \"language\": \"ENGLISH\"\n}"
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Unauthorised", "type": "text" },
+                { "key": "author", "value": "Nobody", "type": "text" },
+                { "key": "description", "value": "No auth", "type": "text" },
+                { "key": "yearPublished", "value": "2024", "type": "text" },
+                { "key": "genre", "value": "FANTASY", "type": "text" },
+                { "key": "language", "value": "ENGLISH", "type": "text" }
+              ]
             }
           },
           "event": [
@@ -331,10 +338,17 @@
             "method": "POST",
             "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "addTitle"] },
             "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{staffToken}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"The Great Gatsby (GW)\",\n  \"author\": \"F. Scott Fitzgerald\",\n  \"description\": \"A novel about the American dream set in the Jazz Age\",\n  \"yearPublished\": 1925,\n  \"genre\": \"FANTASY\",\n  \"language\": \"ENGLISH\"\n}"
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "The Great Gatsby (GW)", "type": "text" },
+                { "key": "author", "value": "F. Scott Fitzgerald", "type": "text" },
+                { "key": "description", "value": "A novel about the American dream set in the Jazz Age", "type": "text" },
+                { "key": "yearPublished", "value": "1925", "type": "text" },
+                { "key": "genre", "value": "FANTASY", "type": "text" },
+                { "key": "language", "value": "ENGLISH", "type": "text" }
+              ]
             }
           },
           "event": [
@@ -662,10 +676,17 @@
             "method": "POST",
             "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "addTitle"] },
             "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Forbidden\",\n  \"author\": \"User\",\n  \"description\": \"Should be blocked\",\n  \"yearPublished\": 2024,\n  \"genre\": \"FANTASY\",\n  \"language\": \"ENGLISH\"\n}"
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Forbidden", "type": "text" },
+                { "key": "author", "value": "User", "type": "text" },
+                { "key": "description", "value": "Should be blocked", "type": "text" },
+                { "key": "yearPublished", "value": "2024", "type": "text" },
+                { "key": "genre", "value": "FANTASY", "type": "text" },
+                { "key": "language", "value": "ENGLISH", "type": "text" }
+              ]
             }
           },
           "event": [
@@ -750,10 +771,17 @@
             "method": "POST",
             "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "addTitle"] },
             "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{staffToken}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"The Great Gatsby (GW)\",\n  \"author\": \"F. Scott Fitzgerald\",\n  \"description\": \"Duplicate attempt\",\n  \"yearPublished\": 1925,\n  \"genre\": \"FANTASY\",\n  \"language\": \"ENGLISH\"\n}"
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "The Great Gatsby (GW)", "type": "text" },
+                { "key": "author", "value": "F. Scott Fitzgerald", "type": "text" },
+                { "key": "description", "value": "Duplicate attempt", "type": "text" },
+                { "key": "yearPublished", "value": "1925", "type": "text" },
+                { "key": "genre", "value": "FANTASY", "type": "text" },
+                { "key": "language", "value": "ENGLISH", "type": "text" }
+              ]
             }
           },
           "event": [
@@ -934,10 +962,17 @@
             "method": "POST",
             "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "addTitle"] },
             "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Animal Farm (GW)\",\n  \"author\": \"George Orwell\",\n  \"description\": \"A satirical allegory about totalitarianism\",\n  \"yearPublished\": 1945,\n  \"genre\": \"SCIFI\",\n  \"language\": \"ENGLISH\"\n}"
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Animal Farm (GW)", "type": "text" },
+                { "key": "author", "value": "George Orwell", "type": "text" },
+                { "key": "description", "value": "A satirical allegory about totalitarianism", "type": "text" },
+                { "key": "yearPublished", "value": "1945", "type": "text" },
+                { "key": "genre", "value": "SCIFI", "type": "text" },
+                { "key": "language", "value": "ENGLISH", "type": "text" }
+              ]
             }
           },
           "event": [
@@ -1083,8 +1118,13 @@
             "method": "POST",
             "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "addTitle"] },
             "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{staffToken}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{}" }
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "", "type": "text" }
+              ]
+            }
           },
           "event": [
             {
@@ -1106,10 +1146,16 @@
             "method": "POST",
             "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api", "books", "addTitle"] },
             "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{staffToken}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Valid Title\",\n  \"author\": \"Author\",\n  \"description\": \"Description\",\n  \"genre\": \"FANTASY\",\n  \"language\": \"ENGLISH\"\n}"
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Valid Title", "type": "text" },
+                { "key": "author", "value": "Author", "type": "text" },
+                { "key": "description", "value": "Description", "type": "text" },
+                { "key": "genre", "value": "FANTASY", "type": "text" },
+                { "key": "language", "value": "ENGLISH", "type": "text" }
+              ]
             }
           },
           "event": [

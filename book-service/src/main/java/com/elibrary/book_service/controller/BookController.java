@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,9 +40,9 @@ public class BookController {
             @ApiResponse(responseCode = "401", description = "Missing or invalid user identity", content = @Content),
             @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)    //TODO: Clarify
     })
-    @PostMapping("/addTitle")
+    @PostMapping(value = "/addTitle", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TitleResponseDTO> addTitle(
-            @Valid @RequestBody TitleRequestDTO request,
+            @Valid @ModelAttribute TitleRequestDTO request,
             @Parameter(description = "Trusted identity header forwarded by gateway")
             @RequestHeader("X-Authenticated-User-Id") Long userId   //TODO: CHECK FOR LIBRARIAN 
     ) {
