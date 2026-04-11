@@ -70,6 +70,6 @@ public class MinioService {
                         .build());
 
         // Return a permanent public URL (bucket is public-read)
-        return props.getEndpoint() + "/" + props.getBucket() + "/" + objectName;
+        return props.getPublicUrl() + "/" + props.getBucket() + "/" + objectName;
     }
 }

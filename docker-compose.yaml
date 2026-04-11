@@ -186,6 +186,7 @@ services:
       DB_USERNAME: ${DB_USERNAME:-elibrary}
       DB_PASSWORD: ${DB_PASSWORD:-elibrary-dev-password}
       MINIO_ENDPOINT: http://minio:9000
+      MINIO_PUBLIC_URL: https://${DOMAIN:-localhost}/storage
       MINIO_ACCESS_KEY: ${MINIO_USER:-elibrary}
       MINIO_SECRET_KEY: ${MINIO_PASSWORD:-elibrary-dev-password}
       MINIO_BUCKET: ${MINIO_BUCKET:-book-covers}
@@ -323,6 +324,14 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-elibrary-dev-password}
     volumes:
       - minio-data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.minio.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/storage/`)"
+      - "traefik.http.routers.minio.entrypoints=websecure"
+      - "traefik.http.routers.minio.tls.certresolver=letsencrypt"
+      - "traefik.http.middlewares.minio-strip.stripprefix.prefixes=/storage"
+      - "traefik.http.routers.minio.middlewares=minio-strip"
+      - "traefik.http.services.minio.loadbalancer.server.port=9000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
@@ -332,6 +341,7 @@ services:
     networks:
       - data
       - internal
+      - public
 
 networks:
   public:

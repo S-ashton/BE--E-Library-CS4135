@@ -28,6 +28,7 @@ eureka:
 app:
   minio:
     endpoint: http://localhost:9000
+    public-url: http://localhost:9000
     access-key: ${MINIO_USER:elibrary}
     secret-key: ${MINIO_PASSWORD:elibrary-dev-password}
     bucket: ${MINIO_BUCKET:book-covers}
