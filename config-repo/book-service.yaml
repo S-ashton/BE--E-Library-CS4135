@@ -16,3 +16,13 @@ management:
     web:
       exposure:
         include: health,info
+
+loan:
+  events:
+    exchange: loan.events
+    borrowed-routing-key: loan.borrowed
+    returned-routing-key: loan.returned
+book:
+  events:
+    exchange: book.events
+    added-routing-key: book.added

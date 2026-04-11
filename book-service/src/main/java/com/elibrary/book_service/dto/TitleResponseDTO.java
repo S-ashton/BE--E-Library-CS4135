@@ -131,4 +131,8 @@ public class TitleResponseDTO {
     public void setLanguage(Languages language){
         this.language = language;
     }
+
+    public int getCopiesAvailable(){
+        return copiesAvailable;
+    }
 }
