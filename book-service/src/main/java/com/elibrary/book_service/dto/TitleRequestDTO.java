@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import com.elibrary.book_service.model.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Schema(description = "Add a new title to the library")
 public class TitleRequestDTO {
@@ -28,8 +29,8 @@ public class TitleRequestDTO {
     @NotNull(message = "A genre from the list must be provided")
     private Genre genre;
 
-    @Schema(description = "The cover image for the book")
-    private byte[] coverImage;
+    @Schema(description = "Optional cover image file (JPEG or PNG)")
+    private MultipartFile coverImage;
 
     @Schema(description = "The primary language in which the book is written", example = "ENGLISH")
     @NotNull(message = "A language from the list must be provided")
@@ -37,7 +38,7 @@ public class TitleRequestDTO {
 
     public TitleRequestDTO() {}
 
-    public TitleRequestDTO(String title, String author, String description, int yearPublished, Genre genre, byte[] coverImage, Languages language) {
+    public TitleRequestDTO(String title, String author, String description, int yearPublished, Genre genre, MultipartFile coverImage, Languages language) {
         this.title = title;
         this.author = author;
         this.description = description;
@@ -87,11 +88,11 @@ public class TitleRequestDTO {
         this.genre = genre;
     }
 
-    public byte[] getCoverImage(){
+    public MultipartFile getCoverImage(){
         return coverImage;
     }
 
-    public void setCoverImage(byte[] coverImage){
+    public void setCoverImage(MultipartFile coverImage){
         this.coverImage = coverImage;
     }
 

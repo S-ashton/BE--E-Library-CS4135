@@ -37,14 +37,14 @@ public class BookService {
     private final CopyRepository copyRepository;
     private final ElasticsearchRepo esRepository;
     private final ElasticsearchClient esClient;
-    private final BookEventPublisher bookEventPublisher;
+    private final MinioService minioService;
 
-    public BookService(TitleRepository bookRepository, CopyRepository copyRepository, ElasticsearchRepo esRepository, ElasticsearchClient esClient, BookEventPublisher bookEventPublisher){
+    public BookService(TitleRepository bookRepository, CopyRepository copyRepository, ElasticsearchRepo esRepository, ElasticsearchClient esClient, MinioService minioService){
         this.bookRepository = bookRepository;
         this.copyRepository = copyRepository;
         this.esRepository = esRepository;
         this.esClient = esClient;
-        this.bookEventPublisher = bookEventPublisher;
+        this.minioService = minioService;
     }
 
     //search
@@ -63,12 +63,19 @@ public class BookService {
             );
         });
 
+        String coverImageUrl;
+        try {
+            coverImageUrl = minioService.uploadCoverImage(title.getCoverImage());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upload cover image", e);
+        }
+
         Book newTitle = new Book(title.getTitle(),
             title.getAuthor(), 
             title.getDescription(),
             title.getYearPublished(), 
             title.getGenre(),
-            title.getCoverImage(),
+            coverImageUrl,
             title.getLanguage());
 
         bookRepository.save(newTitle);

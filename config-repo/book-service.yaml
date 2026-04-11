@@ -3,20 +3,19 @@ server:
 
 spring:
   datasource:
-    url: jdbc:h2:mem:elibrary_book
-    driver-class-name: org.h2.Driver
+    url: jdbc:postgresql://postgres:5432/bookdb
+    username: ${DB_USERNAME:elibrary}
+    password: ${DB_PASSWORD:elibrary-dev-password}
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
-  h2:
-    console:
-      enabled: true
-  rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
-    
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
 eureka:
   client:
     service-url:
@@ -28,12 +27,10 @@ management:
       exposure:
         include: health,info
 
-loan:
-  events:
-    exchange: loan.events
-    borrowed-routing-key: loan.borrowed
-    returned-routing-key: loan.returned
-book:
-  events:
-    exchange: book.events
-    added-routing-key: book.added
+app:
+  minio:
+    endpoint: ${MINIO_ENDPOINT:http://minio:9000}
+    public-url: ${MINIO_PUBLIC_URL:http://minio:9000}
+    access-key: ${MINIO_ACCESS_KEY:elibrary}
+    secret-key: ${MINIO_SECRET_KEY:elibrary-dev-password}
+    bucket: ${MINIO_BUCKET:book-covers}
