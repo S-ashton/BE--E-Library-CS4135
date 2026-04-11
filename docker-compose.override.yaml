@@ -15,6 +15,8 @@ services:
   book-service:
     ports:
       - "8082:8082"
+    environment:
+      MINIO_PUBLIC_URL: http://localhost:9000
 
   minio:
     ports:
