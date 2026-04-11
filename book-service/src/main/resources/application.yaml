@@ -3,7 +3,6 @@ spring:
     name: book-service
 
   config:
-    import: optional:configserver:http://localhost:8888
-
+    import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://localhost:8888}
   elasticsearch:
     uris: http://elasticsearch:9200

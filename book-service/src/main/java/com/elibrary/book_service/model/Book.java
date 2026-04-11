@@ -41,9 +41,8 @@ public class Book {
     @Column(nullable = false)
     private Genre genre;
 
-    @Lob
-    @Column(name = "cover_image", columnDefinition = "BYTEA")
-    private byte[] coverImage;
+    @Column(name = "cover_image_url")
+    private String coverImageUrl;
 
     @Enumerated(EnumType.STRING)
     @Field(type = FieldType.Keyword)
@@ -58,24 +57,24 @@ public class Book {
 
     protected Book() {}
 
-    public Book(String title, String author, String description, int yearPublished, Genre genre, byte[] coverImage, Languages language) {
+    public Book(String title, String author, String description, int yearPublished, Genre genre, String coverImageUrl, Languages language) {
         this.title = title;
         this.author = author;
         this.description = description;
         this.yearPublished = yearPublished;
         this.genre = genre;
-        this.coverImage = coverImage;
+        this.coverImageUrl = coverImageUrl;
         this.language = language;
         this.copiesAvailable = 1;
     }
 
-    public Book(String title, String author, String description, int yearPublished, Genre genre, byte[] coverImage, Languages language, int copiesAvailable) {
+    public Book(String title, String author, String description, int yearPublished, Genre genre, String coverImageUrl, Languages language, int copiesAvailable) {
         this.title = title;
         this.author = author;
         this.description = description;
         this.yearPublished = yearPublished;
         this.genre = genre;
-        this.coverImage = coverImage;
+        this.coverImageUrl = coverImageUrl;
         this.language = language;
         this.copiesAvailable = copiesAvailable;
     }
@@ -124,12 +123,12 @@ public class Book {
         this.genre = genre;
     }
 
-    public byte[] getCoverImage(){
-        return coverImage;
+    public String getCoverImageUrl(){
+        return coverImageUrl;
     }
 
-    public void setCoverImage(byte[] coverImage){
-        this.coverImage = coverImage;
+    public void setCoverImageUrl(String coverImageUrl){
+        this.coverImageUrl = coverImageUrl;
     }
 
     public Languages getLanguage(){
@@ -150,7 +149,7 @@ public class Book {
 
     public TitleResponseDTO toDto (){
         return new TitleResponseDTO(this.id, this.title, this.author, this.description,
-                                    this.yearPublished, this.genre, this.coverImage, 
+                                    this.yearPublished, this.genre, this.coverImageUrl, 
                                     this.language, this.copiesAvailable);
     }
 }
