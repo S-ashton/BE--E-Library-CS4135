@@ -151,6 +151,7 @@ services:
     environment:
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
       APP_JWT_SECRET: ${APP_JWT_SECRET:-default-dev-jwt-secret-change-in-production-must-be-at-least-256-bits-long-for-hmac-sha}
       APP_JWT_ISSUER: ${APP_JWT_ISSUER:-elibrary-user-service}
       APP_JWT_EXPIRATION_SECONDS: ${APP_JWT_EXPIRATION_SECONDS:-3600}
@@ -162,6 +163,8 @@ services:
       discovery-server:
         condition: service_healthy
       postgres:
+        condition: service_healthy
+      elasticsearch:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1"]
@@ -285,6 +288,24 @@ services:
 # public: Only the API gateway
 # internal: All services + infrastructure (called a service mesh)
 # data: Backend services + datastores (databases, message brokers)
+
+  elasticsearch:
+    image: elasticsearch:8.17.0
+    container_name: elasticsearch
+    restart: unless-stopped
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - elibrary-network
 
 networks:
   public:
