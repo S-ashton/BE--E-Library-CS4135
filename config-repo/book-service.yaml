@@ -5,7 +5,18 @@ spring:
   datasource:
     url: jdbc:h2:mem:elibrary_book
     driver-class-name: org.h2.Driver
-
+  jpa:
+    hibernate:
+      ddl-auto: update
+  h2:
+    console:
+      enabled: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    
 eureka:
   client:
     service-url:
