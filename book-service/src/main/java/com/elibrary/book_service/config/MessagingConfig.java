@@ -1,8 +1,6 @@
-package com.elibrary.loan_service.config;
+package com.elibrary.book_service.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.amqp.core.Queue;
-
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -17,13 +15,13 @@ import org.springframework.context.annotation.Configuration;
 public class MessagingConfig {
 
     @Bean
-    public Queue loanEventsQueue() {
-        return new Queue("loan.events", true);
+    public TopicExchange loanEventsExchange() {
+        return new TopicExchange("loan.events", true, false);
     }
 
     @Bean
-    public TopicExchange loanEventsExchange() {
-        return new TopicExchange("loan.events", true, false);
+    public TopicExchange bookEventsExchange(){
+        return new TopicExchange("book.events", true, false);
     }
 
     @Bean
@@ -47,5 +45,13 @@ public class MessagingConfig {
             TopicExchange loanEventsExchange
     ) {
         return args -> amqpAdmin.declareExchange(loanEventsExchange);
+    }
+
+    @Bean 
+    public CommandLineRunner declareBookExchange(
+            AmqpAdmin amqpAdmin,
+            TopicExchange bookEventsExchange
+    ) {
+        return args -> amqpAdmin.declareExchange(bookEventsExchange);
     }
 }
