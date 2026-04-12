@@ -38,6 +38,7 @@ public class BookController {
                     content = @Content(schema = @Schema(implementation = TitleRequestDTO.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
             @ApiResponse(responseCode = "401", description = "Missing or invalid user identity", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
             @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)    //TODO: Clarify
     })
     @PostMapping(value = "/addTitle", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -59,15 +60,16 @@ public class BookController {
                     content = @Content(schema = @Schema(implementation = CopyCreationDTO.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
             @ApiResponse(responseCode = "401", description = "Missing or invalid user identity", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)    //TODO: Clarify
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)
     })
     @PostMapping("/addCopy")
     public ResponseEntity<CopyResponseDTO> addCopy(
             @Valid @RequestBody Long titleId,
             @Parameter(description = "Trusted identity header forwarded by gateway")
-            @RequestHeader("X-Authenticated-User-Id") Long userId   //TODO: CHECK FOR LIBRARIAN 
+            @RequestHeader("X-Authenticated-User-Id") Long userId
     ) {
-        CopyResponseDTO response = bookService.addCopy(titleId); //TODO: Update
+        CopyResponseDTO response = bookService.addCopy(titleId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -80,15 +82,16 @@ public class BookController {
                     content = @Content(schema = @Schema(implementation = CopyResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
             @ApiResponse(responseCode = "401", description = "Missing or invalid user identity", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)    //TODO: Clarify
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)
     })
     @PutMapping("/changeStatus")
     public ResponseEntity<CopyResponseDTO> changeStatus(
             @Valid @RequestBody Long copyId, Status status,
             @Parameter(description = "Trusted identity header forwarded by gateway")
-            @RequestHeader("X-Authenticated-User-Id") Long userId   //TODO: CHECK FOR LIBRARIAN 
+            @RequestHeader("X-Authenticated-User-Id") Long userId 
     ) {
-        CopyResponseDTO response = bookService.changeStatus(copyId, status); //TODO: Update
+        CopyResponseDTO response = bookService.changeStatus(copyId, status);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -101,11 +104,11 @@ public class BookController {
                     content = @Content(schema = @Schema(implementation = TitleResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
             @ApiResponse(responseCode = "401", description = "Missing or invalid user identity", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)    //TODO: Clarify
+            @ApiResponse(responseCode = "409", description = "Conflict", content = @Content) 
     })
     @GetMapping("/{id}")
     public ResponseEntity<TitleResponseDTO> getTitle(@PathVariable("id") Long titleId) {
-        TitleResponseDTO response = bookService.getTitle(titleId); //TODO: Update
+        TitleResponseDTO response = bookService.getTitle(titleId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -118,7 +121,7 @@ public class BookController {
                     content = @Content(schema = @Schema(implementation = TitleResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
             @ApiResponse(responseCode = "401", description = "Missing or invalid user identity", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)    //TODO: Clarify
+            @ApiResponse(responseCode = "409", description = "Conflict", content = @Content) 
     })
     @GetMapping("/search")
     public ResponseEntity<List<TitleResponseDTO>> search(

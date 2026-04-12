@@ -9,37 +9,43 @@ import co.elastic.clients.elasticsearch.core.SearchRequest;
 
 import com.elibrary.book_service.model.*;
 import com.elibrary.book_service.exceptions.*;
+import com.elibrary.book_service.messaging.*;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
-import co.elastic.clients.elasticsearch.core.search.HitsMetadata;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import java.util.stream.Collectors;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class BookService {
+
+    private static final Logger log = LoggerFactory.getLogger(BookService.class);
 
     private final TitleRepository bookRepository;
     private final CopyRepository copyRepository;
     private final ElasticsearchRepo esRepository;
     private final ElasticsearchClient esClient;
+    private final BookEventPublisher bookEventPublisher;
     private final MinioService minioService;
 
-    public BookService(TitleRepository bookRepository, CopyRepository copyRepository, ElasticsearchRepo esRepository, ElasticsearchClient esClient, MinioService minioService){
+    public BookService(TitleRepository bookRepository, CopyRepository copyRepository, ElasticsearchRepo esRepository, ElasticsearchClient esClient, BookEventPublisher bookEventPublisher, MinioService minioService){
         this.bookRepository = bookRepository;
         this.copyRepository = copyRepository;
         this.esRepository = esRepository;
         this.esClient = esClient;
+        this.bookEventPublisher = bookEventPublisher;
         this.minioService = minioService;
     }
 
@@ -79,7 +85,22 @@ public class BookService {
 
         copyRepository.save(new BookCopy(newTitle.getId(), Status.AVAILABLE));
 
-        //TODO: Send notification to Recommender
+        try {
+            BookAddedEvent event = new BookAddedEvent(
+                newTitle.getId(),
+                newTitle.getTitle(),
+                newTitle.getAuthor(), 
+                newTitle.getDescription(),
+                newTitle.getYearPublished(), 
+                newTitle.getGenre(),
+                newTitle.getCoverImageUrl(),
+                newTitle.getLanguage(),
+                1
+            );
+            bookEventPublisher.publishBookAdded(event);
+        } catch (Exception ex) {
+            log.warn("loan.borrowed publish failed for loanId={}", newTitle.getId(), ex);
+        }
 
         return newTitle.toDto();
     }
@@ -108,7 +129,7 @@ public class BookService {
         );
 
         if(currentCopy.getStatus().equals(status)){
-            throw new StatusMatchingException("This copy already has this status");  //TODO: Implement exception
+            throw new StatusMatchingException("This copy already has this status");
         }else{
             currentCopy.setStatus(status);
             currentCopy = copyRepository.save(currentCopy);

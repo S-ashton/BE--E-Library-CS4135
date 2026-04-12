@@ -15,6 +15,11 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  rabbitmq:
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:-elibrary}
+    password: ${RABBITMQ_PASSWORD:-elibrary-dev-password}
 
 eureka:
   client:
@@ -34,3 +39,13 @@ app:
     access-key: ${MINIO_ACCESS_KEY:elibrary}
     secret-key: ${MINIO_SECRET_KEY:elibrary-dev-password}
     bucket: ${MINIO_BUCKET:book-covers}
+
+loan:
+  events:
+    exchange: loan.events
+    borrowed-routing-key: loan.borrowed
+    returned-routing-key: loan.returned
+book:
+  events:
+    exchange: book.events
+    added-routing-key: book.added
