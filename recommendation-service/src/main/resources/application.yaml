@@ -2,7 +2,7 @@ spring:
   application:
     name: recommendation-service
   config:
-    import: optional:configserver:http://localhost:8888
+    import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://localhost:8888}
 
 services:
   embedding-service:

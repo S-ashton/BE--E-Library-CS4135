@@ -2,21 +2,20 @@ package com.elibrary.loan_service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.AmqpAdmin;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+        "loan.events.exchange=loan.events",
+        "loan.events.borrowed-routing-key=loan.borrowed",
+        "loan.events.returned-routing-key=loan.returned"
+})
 class LoanServiceApplicationTests {
 
-	@MockBean
-	ConnectionFactory connectionFactory;
+    @MockitoBean
+    private AmqpAdmin amqpAdmin;
 
-	@MockBean
-	AmqpAdmin amqpAdmin;
-
-	@Test
-	void contextLoads() {
-	}
-
+    @Test
+    void contextLoads() {
+    }
 }
