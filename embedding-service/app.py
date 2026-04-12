@@ -15,6 +15,10 @@ class EmbedResponse(BaseModel):
     embedding: list
     model_version: str
 
+@app.get("/health")
+def health():
+    return {"status": "UP"}
+
 @app.post("/embed", response_model=EmbedResponse)
 def embed_text(request: EmbedRequest):
     embedding = model.encode(request.text, convert_to_numpy=True).tolist()

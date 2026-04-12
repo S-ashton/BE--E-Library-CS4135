@@ -16,7 +16,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.*;
 
 @RestController
-@RequestMapping("/internal")
+@RequestMapping("/api/recommendations/internal")
 @Tag(
         name = "Internal Updates",
         description = "Endpoints used by book-service and loan-service to push updates"

@@ -5,4 +5,4 @@ spring:
   config:
     import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://localhost:8888}
   elasticsearch:
-    uris: http://elasticsearch:9200
+    uris: ${SPRING_ELASTICSEARCH_URIS:http://elasticsearch:9200}

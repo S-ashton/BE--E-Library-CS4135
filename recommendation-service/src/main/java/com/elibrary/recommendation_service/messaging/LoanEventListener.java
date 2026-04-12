@@ -24,22 +24,19 @@ public class LoanEventListener {
     }
 
     @RabbitListener(queues = "${loan.events.queue}")
-    public void onLoanBorrowed(LoanRecord event) {
+    public void onLoanBorrowed(@Payload Map<String, Object> event) {
+        String userId = String.valueOf(event.get("userId"));
+        String bookId = String.valueOf(event.get("bookId"));
 
-        String userId = event.getUserId().toString();
-        String bookId = event.getBookId().toString();
-
-        log.info("Received loan event: userId={}, bookId={}", userId, bookId);
+        log.info("Received loan.borrowed event: userId={}, bookId={}", userId, bookId);
 
         Map<String, List<String>> loans = storage.load("data/loans.json", Map.class);
-
         if (loans == null) loans = new HashMap<>();
-        loans.computeIfAbsent(userId, k -> new ArrayList<>());
 
+        loans.computeIfAbsent(userId, k -> new ArrayList<>());
         if (!loans.get(userId).contains(bookId)) {
             loans.get(userId).add(bookId);
             storage.save("data/loans.json", loans);
-            log.info("Added book {} to user {} loan list", bookId, userId);
         }
     }
 }

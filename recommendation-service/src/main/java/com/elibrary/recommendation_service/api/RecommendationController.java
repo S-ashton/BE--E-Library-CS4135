@@ -12,8 +12,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
-
 import java.util.List;
 
 @RestController
@@ -39,21 +37,15 @@ public class RecommendationController {
             @ApiResponse(responseCode = "500", description = "Unexpected server error", content = @Content)
     })
     @GetMapping
-    public RecommendationResponse getRecommendations(
-            @RequestParam(defaultValue = "10") int limit,
-            @RequestHeader("X-User-Id") String userId
+    public List<RecommendationResponse> getRecommendations(
+            @RequestHeader("X-Authenticated-User-Id") String userId,
+            @RequestParam(defaultValue = "5") int limit
     ) {
-        if (limit < 1) {
-            throw new IllegalArgumentException("Limit must be at least 1");
-        }
-
-        List<Recommendation> recs = engine.recommend(userId, limit);
-
-        if (recs == null || recs.isEmpty()) {
-            throw new EntityNotFoundException("No recommendations found for user: " + userId);
-        }
-
-        return new RecommendationResponse(recs);
+        return engine.recommend(userId, limit).stream()
+                .map(r -> new RecommendationResponse(
+                        r.getBookId(),
+                        r.getScore()
+                ))
+                .toList();
     }
-
 }

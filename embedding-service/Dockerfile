@@ -17,6 +17,6 @@ from sentence_transformers import SentenceTransformer
 SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
 EOF
 
-EXPOSE 8085
+EXPOSE 8000
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8085"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
