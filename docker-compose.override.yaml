@@ -1,4 +1,6 @@
 # Local development overrides loaded automatically by Docker Compose.
+# DO NOT use this file in production.
+# Production: docker compose -f docker-compose.yaml up -d
 #
 # To run book-service outside Docker (e.g. from your IDE) instead of in a container:
 #   1. Start infrastructure only:
@@ -25,8 +27,8 @@ services:
 
   rabbitmq:
     ports:
-      - "15672:15672"
+      - "15672:15672" # RabbitMQ management UI
 
   postgres:
     ports:
-      - "5432:5432"
+      - "5432:5432"   # PostgreSQL for local inspection and development
