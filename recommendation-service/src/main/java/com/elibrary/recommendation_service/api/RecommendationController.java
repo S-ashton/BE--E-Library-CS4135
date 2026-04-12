@@ -38,16 +38,22 @@ public class RecommendationController {
             @ApiResponse(responseCode = "404", description = "User not found", content = @Content),
             @ApiResponse(responseCode = "500", description = "Unexpected server error", content = @Content)
     })
-    @GetMapping("/{userId}")
-    public List<RecommendationResponse> getRecommendations(
-            @PathVariable String userId,
-            @RequestParam(defaultValue = "5") int limit
+    @GetMapping
+    public RecommendationResponse getRecommendations(
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestHeader("X-User-Id") String userId
     ) {
-        return engine.recommend(userId, limit).stream()
-                .map(r -> new RecommendationResponse(
-                        r.getBookId(),
-                        r.getScore()
-                ))
-                .toList();
+        if (limit < 1) {
+            throw new IllegalArgumentException("Limit must be at least 1");
+        }
+
+        List<Recommendation> recs = engine.recommend(userId, limit);
+
+        if (recs == null || recs.isEmpty()) {
+            throw new EntityNotFoundException("No recommendations found for user: " + userId);
+        }
+
+        return new RecommendationResponse(recs);
     }
+
 }
