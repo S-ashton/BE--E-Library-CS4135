@@ -1,8 +1,8 @@
 package com.elibrary.recommendation_service.api;
 
-import com.elibrary.recommendation_service.embedding.BookEmbeddingCache;
 import com.elibrary.recommendation_service.model.Book;
 import com.elibrary.recommendation_service.model.LoanRecord;
+import com.elibrary.recommendation_service.service.BookUpdateService;
 import com.elibrary.recommendation_service.storage.FileStorageService;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,12 +24,12 @@ import java.util.*;
 public class UpdateController {
 
     private final FileStorageService storage;
-    private final BookEmbeddingCache embeddingCache;
+    private final BookUpdateService bookUpdateService;
 
     public UpdateController(FileStorageService storage,
-                            BookEmbeddingCache embeddingCache) {
+                            BookUpdateService bookUpdateService) {
         this.storage = storage;
-        this.embeddingCache = embeddingCache;
+        this.bookUpdateService = bookUpdateService;
     }
 
     @Operation(
@@ -46,26 +46,7 @@ public class UpdateController {
                                @Schema(description = "Book object containing updated metadata")
                                Book book)
     {
-
-        List<Map<String, Object>> rawBooks =
-                storage.load("data/books.json", List.class);
-
-        if (rawBooks == null) rawBooks = new ArrayList<>();
-
-        // Remove old version
-        rawBooks.removeIf(b -> Objects.equals(b.get("id"), book.getId()));
-
-        // Add new version
-        rawBooks.add(Map.of(
-                "id", book.getId(),
-                "title", book.getTitle(),
-                "description", book.getDescription()
-        ));
-
-        storage.save("data/books.json", rawBooks);
-
-        // Embed immediately
-        embeddingCache.addOrUpdateBook(book);
+        bookUpdateService.updateBook(book);
     }
 
     @Operation(
