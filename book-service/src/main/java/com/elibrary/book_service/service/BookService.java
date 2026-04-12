@@ -37,13 +37,15 @@ public class BookService {
     private final CopyRepository copyRepository;
     private final ElasticsearchRepo esRepository;
     private final ElasticsearchClient esClient;
+    private final BookEventPublisher bookEventPublisher;
     private final MinioService minioService;
 
-    public BookService(TitleRepository bookRepository, CopyRepository copyRepository, ElasticsearchRepo esRepository, ElasticsearchClient esClient, MinioService minioService){
+    public BookService(TitleRepository bookRepository, CopyRepository copyRepository, ElasticsearchRepo esRepository, ElasticsearchClient esClient, BookEventPublisher bookEventPublisher, MinioService minioService){
         this.bookRepository = bookRepository;
         this.copyRepository = copyRepository;
         this.esRepository = esRepository;
         this.esClient = esClient;
+        this.bookEventPublisher = bookEventPublisher;
         this.minioService = minioService;
     }
 
@@ -91,7 +93,7 @@ public class BookService {
                 newTitle.getDescription(),
                 newTitle.getYearPublished(), 
                 newTitle.getGenre(),
-                newTitle.getCoverImage(),
+                newTitle.getCoverImageUrl(),
                 newTitle.getLanguage(),
                 1
             );
@@ -127,7 +129,7 @@ public class BookService {
         );
 
         if(currentCopy.getStatus().equals(status)){
-            throw new StatusMatchingException("This copy already has this status");  //TODO: Implement exception
+            throw new StatusMatchingException("This copy already has this status");
         }else{
             currentCopy.setStatus(status);
             currentCopy = copyRepository.save(currentCopy);

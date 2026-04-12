@@ -21,7 +21,7 @@ public class BookAddedEvent {
 
     private Genre genre;
 
-    private byte[] coverImage;
+    private String coverImageUrl;
 
     private Languages language;
 
@@ -29,14 +29,14 @@ public class BookAddedEvent {
 
     public BookAddedEvent() {}
 
-    public BookAddedEvent(Long id, String title, String author, String description, int yearPublished, Genre genre, byte[] coverImage, Languages language, int copiesAvailable) {
+    public BookAddedEvent(Long id, String title, String author, String description, int yearPublished, Genre genre, String coverImageUrl, Languages language, int copiesAvailable) {
         this.id = id;
         this.title = title;
         this.author = author;
         this.description = description;
         this.yearPublished = yearPublished;
         this.genre = genre;
-        this.coverImage = coverImage;
+        this.coverImageUrl = coverImageUrl;
         this.language = language;
         this.copiesAvailable = copiesAvailable;
     }
@@ -89,12 +89,12 @@ public class BookAddedEvent {
         this.genre = genre;
     }
 
-    public byte[] getCoverImage(){
-        return coverImage;
+    public String getCoverImageUrl(){
+        return coverImageUrl;
     }
 
-    public void setCoverImage(byte[] coverImage){
-        this.coverImage = coverImage;
+    public void setCoverImageUrl(String coverImageUrl){
+        this.coverImageUrl = coverImageUrl;
     }
 
     public Languages getLanguage(){

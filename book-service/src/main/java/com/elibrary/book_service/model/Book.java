@@ -42,6 +42,7 @@ public class Book {
     private Genre genre;
 
     @Column(name = "cover_image_url")
+    @Field(type = FieldType.Text)
     private String coverImageUrl;
 
     @Enumerated(EnumType.STRING)
