@@ -49,8 +49,6 @@ public class BookService {
         this.minioService = minioService;
     }
 
-    //search
-
     @Transactional
     public TitleResponseDTO addTitle(TitleRequestDTO title){
         bookRepository.findByTitleAndAuthorAndYearPublishedAndLanguage(
@@ -114,8 +112,9 @@ public class BookService {
 
         copyRepository.save(newCopy);
 
-        int currentNumCopies = copyRepository.countByIdAndStatus(bookId, Status.AVAILABLE);
-        book.setCopiesAvailable(currentNumCopies);
+        List<BookCopy> availableCopies = copyRepository.findByBookIdAndStatus(bookId, Status.AVAILABLE)
+            .orElseThrow(() -> new CopyNotFoundException("No available copies of this title exist"));;
+        book.setCopiesAvailable(availableCopies.size());
         bookRepository.save(book);
         esRepository.save(book);
 
@@ -134,9 +133,10 @@ public class BookService {
             currentCopy.setStatus(status);
             currentCopy = copyRepository.save(currentCopy);
 
-            int currentNumCopies = copyRepository.countByIdAndStatus(currentCopy.getBookId(), Status.AVAILABLE);
+            List<BookCopy> availableCopies = copyRepository.findByBookIdAndStatus(currentCopy.getBookId(), Status.AVAILABLE)
+                .orElseThrow(() -> new CopyNotFoundException("No available copies of this title exist"));;
             Book book = bookRepository.findById(currentCopy.getBookId()).get();
-            book.setCopiesAvailable(currentNumCopies);
+            book.setCopiesAvailable(availableCopies.size());
             bookRepository.save(book);
             esRepository.save(book);
 
