@@ -16,8 +16,11 @@ public class LoanDTO {
     @Schema(description = "Authenticated user ID who owns the loan", example = "1")
     private Long userId;
 
-    @Schema(description = "Borrowed book ID", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
-    private UUID bookId;
+    @Schema(description = "Borrowed book title ID", example = "1")
+    private Long bookId;
+
+    @Schema(description = "Borrowed copy ID", example = "12")
+    private Long copyId;
 
     @Schema(description = "Date and time the book was borrowed")
     private LocalDateTime borrowDate;
@@ -37,12 +40,13 @@ public class LoanDTO {
     public LoanDTO() {
     }
 
-    public LoanDTO(UUID id, Long userId, UUID bookId, LocalDateTime borrowDate,
-                   LocalDateTime dueDate, LocalDateTime returnDate,
+    public LoanDTO(UUID id, Long userId, Long bookId, Long copyId,
+                   LocalDateTime borrowDate, LocalDateTime dueDate, LocalDateTime returnDate,
                    LoanStatus status, BigDecimal fineAmount) {
         this.id = id;
         this.userId = userId;
         this.bookId = bookId;
+        this.copyId = copyId;
         this.borrowDate = borrowDate;
         this.dueDate = dueDate;
         this.returnDate = returnDate;
@@ -66,12 +70,20 @@ public class LoanDTO {
         this.userId = userId;
     }
 
-    public UUID getBookId() {
+    public Long getBookId() {
         return bookId;
     }
 
-    public void setBookId(UUID bookId) {
+    public void setBookId(Long bookId) {
         this.bookId = bookId;
+    }
+
+    public Long getCopyId() {
+        return copyId;
+    }
+
+    public void setCopyId(Long copyId) {
+        this.copyId = copyId;
     }
 
     public LocalDateTime getBorrowDate() {

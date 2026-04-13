@@ -19,7 +19,10 @@ public class Loan {
     private Long userId;
 
     @Column(nullable = false)
-    private UUID bookId;
+    private Long bookId;
+
+    @Column(nullable = false)
+    private Long copyId;
 
     @Column(nullable = false)
     private LocalDateTime borrowDate;
@@ -40,9 +43,11 @@ public class Loan {
         this.fineAmount = BigDecimal.ZERO;
     }
 
-    public Loan(Long userId, UUID bookId, LocalDateTime borrowDate, LocalDateTime dueDate, LoanStatus status) {
+    public Loan(Long userId, Long bookId, Long copyId,
+                LocalDateTime borrowDate, LocalDateTime dueDate, LoanStatus status) {
         this.userId = userId;
         this.bookId = bookId;
+        this.copyId = copyId;
         this.borrowDate = borrowDate;
         this.dueDate = dueDate;
         this.status = status;
@@ -60,7 +65,7 @@ public class Loan {
     }
 
     public void markOverdue() {
-        if (this.status == LoanStatus.ACTIVE && LocalDateTime.now().isAfter(this.dueDate)) {
+        if (this.status == LoanStatus.ACTIVE) {
             this.status = LoanStatus.OVERDUE;
         }
     }
@@ -73,8 +78,12 @@ public class Loan {
         return userId;
     }
 
-    public UUID getBookId() {
+    public Long getBookId() {
         return bookId;
+    }
+
+    public Long getCopyId() {
+        return copyId;
     }
 
     public LocalDateTime getBorrowDate() {
