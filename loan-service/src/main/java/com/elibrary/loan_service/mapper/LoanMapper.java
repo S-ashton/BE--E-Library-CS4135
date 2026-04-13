@@ -8,15 +8,16 @@ import org.springframework.stereotype.Component;
 public class LoanMapper {
 
     public LoanDTO toDto(Loan loan) {
-        LoanDTO dto = new LoanDTO();
-        dto.setId(loan.getId());
-        dto.setUserId(loan.getUserId());
-        dto.setBookId(loan.getBookId());
-        dto.setBorrowDate(loan.getBorrowDate());
-        dto.setDueDate(loan.getDueDate());
-        dto.setReturnDate(loan.getReturnDate());
-        dto.setStatus(loan.getStatus());
-        dto.setFineAmount(loan.getFineAmount());
-        return dto;
+         return new LoanDTO(
+                loan.getId(),
+                loan.getUserId(),
+                loan.getBookId(),
+                loan.getCopyId(),
+                loan.getBorrowDate(),
+                loan.getDueDate(),
+                loan.getReturnDate(),
+                loan.getStatus(),
+                loan.getFineAmount()
+        );
     }
 }

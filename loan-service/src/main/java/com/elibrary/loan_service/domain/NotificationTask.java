@@ -19,6 +19,9 @@ public class NotificationTask {
     @Column(nullable = false)
     private Long userId;
 
+    @Column(nullable = false)
+    private String recipientEmail;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private NotificationType type;
@@ -38,9 +41,11 @@ public class NotificationTask {
     public NotificationTask() {
     }
 
-    public NotificationTask(UUID loanId, Long userId, NotificationType type, LocalDateTime scheduledAt) {
+    public NotificationTask(UUID loanId, Long userId, String recipientEmail,
+                            NotificationType type, LocalDateTime scheduledAt) {
         this.loanId = loanId;
         this.userId = userId;
+        this.recipientEmail = recipientEmail;
         this.type = type;
         this.scheduledAt = scheduledAt;
         this.status = NotificationStatus.PENDING;
@@ -59,10 +64,8 @@ public class NotificationTask {
     }
 
     public void markFailed() {
-        if (this.status == NotificationStatus.PENDING || this.status == NotificationStatus.FAILED) {
-            this.status = NotificationStatus.FAILED;
-            this.retryCount += 1;
-        }
+        this.status = NotificationStatus.FAILED;
+        this.retryCount += 1;
     }
 
     public void markDead() {
@@ -79,6 +82,10 @@ public class NotificationTask {
 
     public Long getUserId() {
         return userId;
+    }
+
+    public String getRecipientEmail() {
+        return recipientEmail;
     }
 
     public NotificationType getType() {

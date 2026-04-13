@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface LoanRepository extends JpaRepository<Loan, UUID> {
-    boolean existsByUserIdAndBookIdAndStatus(Long userId, UUID bookId, LoanStatus status);
+    boolean existsByUserIdAndBookIdAndStatus(Long userId, Long bookId, LoanStatus status);
 
     List<Loan> findByUserIdOrderByBorrowDateDesc(Long userId);
 

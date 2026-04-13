@@ -218,13 +218,16 @@ services:
     environment:
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
-      BOOK_SERVICE_BASE_URL: http://book-service:8082
+      SERVICES_BOOK_BASE_URL: http://api-gateway:8080
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-elibrary}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-elibrary-dev-password}
       DB_USERNAME: ${DB_USERNAME:-elibrary}
       DB_PASSWORD: ${DB_PASSWORD:-elibrary-dev-password}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      SENDGRID_FROM_EMAIL: ${SENDGRID_FROM_EMAIL}
+      SENDGRID_FROM_NAME: ${SENDGRID_FROM_NAME:-E-Library}
     depends_on:
       config-server:
         condition: service_healthy
