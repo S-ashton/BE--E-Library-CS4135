@@ -45,6 +45,8 @@ loan:
     exchange: loan.events
     borrowed-routing-key: loan.borrowed
     returned-routing-key: loan.returned
+    borrowed-queue: book-service.loan.borrowed
+    returned-queue: book-service.loan.returned
 book:
   events:
     exchange: book.events

@@ -17,12 +17,40 @@
       "name": "1 - Auth Setup",
       "item": [
         {
+          "name": "Register USER account",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/register", "host": ["{{gatewayUrl}}"], "path": ["api","auth","register"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"rec-user@elibrary.ie\",\n  \"password\": \"Test@12345\",\n  \"role\": \"USER\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('USER account ready (201 or 409)', function () {",
+            "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Register STAFF account",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/register", "host": ["{{gatewayUrl}}"], "path": ["api","auth","register"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"rec-staff@elibrary.ie\",\n  \"password\": \"Test@12345\",\n  \"role\": \"STAFF\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('STAFF account ready (201 or 409)', function () {",
+            "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+            "});"
+          ]}}]
+        },
+        {
           "name": "Login as USER",
           "request": {
             "method": "POST",
             "url": { "raw": "{{gatewayUrl}}/api/auth/login", "host": ["{{gatewayUrl}}"], "path": ["api","auth","login"] },
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"email\": \"e2e-user@elibrary.ie\",\n  \"password\": \"Test@12345\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"rec-user@elibrary.ie\",\n  \"password\": \"Test@12345\"\n}" }
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "pm.test('USER login returns 200', function () { pm.response.to.have.status(200); });",
@@ -55,7 +83,7 @@
             "method": "POST",
             "url": { "raw": "{{gatewayUrl}}/api/auth/login", "host": ["{{gatewayUrl}}"], "path": ["api","auth","login"] },
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"email\": \"e2e-staff@elibrary.ie\",\n  \"password\": \"Test@12345\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"rec-staff@elibrary.ie\",\n  \"password\": \"Test@12345\"\n}" }
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "pm.test('STAFF login returns 200', function () { pm.response.to.have.status(200); });",

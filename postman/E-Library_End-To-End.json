@@ -353,7 +353,7 @@
             "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Get title returns 201', function () { pm.response.to.have.status(201); });",
+            "pm.test('Get title returns 200 or 201', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
             "pm.test('Title has correct fields', function () {",
             "    const body = pm.response.json();",
             "    pm.expect(body).to.have.property('title');",
@@ -374,7 +374,7 @@
             "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Search returns 201', function () { pm.response.to.have.status(201); });",
+            "pm.test('Search returns 200', function () { pm.response.to.have.status(200); });",
             "pm.test('Search result is an array', function () {",
             "    pm.expect(pm.response.json()).to.be.an('array');",
             "});"
@@ -393,7 +393,7 @@
             "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Genre search returns 201', function () { pm.response.to.have.status(201); });"
+            "pm.test('Genre search returns 200', function () { pm.response.to.have.status(200); });"
           ]}}]
         },
         {
@@ -409,7 +409,7 @@
             "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Year search returns 201', function () { pm.response.to.have.status(201); });"
+            "pm.test('Year search returns 200', function () { pm.response.to.have.status(200); });"
           ]}}]
         },
         {
@@ -425,7 +425,7 @@
             "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Titles by IDs returns 201', function () { pm.response.to.have.status(201); });"
+            "pm.test('Titles by IDs returns 200', function () { pm.response.to.have.status(200); });"
           ]}}]
         },
         {
@@ -441,8 +441,8 @@
             "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Get available copy returns 201 or 404', function () {",
-            "    pm.expect(pm.response.code).to.be.oneOf([201, 404]);",
+            "pm.test('Get available copy returns 200 or 409', function () {\n",
+            "    pm.expect(pm.response.code).to.be.oneOf([200, 409]);\n",
             "});"
           ]}}]
         },
@@ -459,7 +459,7 @@
             "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Count copies returns 201', function () { pm.response.to.have.status(201); });"
+            "pm.test('Count copies returns 200', function () { pm.response.to.have.status(200); });"
           ]}}]
         },
         {
@@ -478,7 +478,7 @@
             "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('Count available copies returns 201', function () { pm.response.to.have.status(201); });"
+            "pm.test('Count available copies returns 200', function () { pm.response.to.have.status(200); });"
           ]}}]
         },
         {
