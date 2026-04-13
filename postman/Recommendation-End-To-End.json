@@ -1,0 +1,312 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Recommendation End-To-End",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "gatewayUrl",  "value": "http://localhost:8080", "type": "string" },
+    { "key": "userToken",   "value": "", "type": "string" },
+    { "key": "staffToken",  "value": "", "type": "string" },
+    { "key": "userId",      "value": "", "type": "string" },
+    { "key": "testBookId",  "value": "9001",              "type": "string" }
+  ],
+  "item": [
+
+    {
+      "name": "1 - Auth Setup",
+      "item": [
+        {
+          "name": "Login as USER",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/login", "host": ["{{gatewayUrl}}"], "path": ["api","auth","login"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"e2e-user@elibrary.ie\",\n  \"password\": \"Test@12345\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('USER login returns 200', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Access token present', function () { pm.expect(body).to.have.property('token'); });",
+            "pm.collectionVariables.set('userToken', body.token);"
+          ]}}]
+        },
+        {
+          "name": "Get USER profile (capture userId)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/users/me", "host": ["{{gatewayUrl}}"], "path": ["api","users","me"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Profile returns 200', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Profile contains numeric id', function () {",
+            "    pm.expect(body).to.have.property('id');",
+            "    pm.expect(body.id).to.be.a('number');",
+            "});",
+            "pm.collectionVariables.set('userId', String(body.id));",
+            "console.log('Captured userId:', body.id);"
+          ]}}]
+        },
+        {
+          "name": "Login as STAFF",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/login", "host": ["{{gatewayUrl}}"], "path": ["api","auth","login"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"e2e-staff@elibrary.ie\",\n  \"password\": \"Test@12345\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('STAFF login returns 200', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Access token present', function () { pm.expect(body).to.have.property('token'); });",
+            "pm.collectionVariables.set('staffToken', body.token);"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "2 - Access Control",
+      "item": [
+        {
+          "name": "Get recommendations without auth (expect 401)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/recommendations", "host": ["{{gatewayUrl}}"], "path": ["api","recommendations"] },
+            "header": []
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Unauthenticated request is rejected (401)', function () { pm.response.to.have.status(401); });"
+          ]}}]
+        },
+        {
+          "name": "Get recommendations as USER (authenticated)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/recommendations", "host": ["{{gatewayUrl}}"], "path": ["api","recommendations"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Authenticated request returns 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('Response is an array', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "3 - Recommendations",
+      "item": [
+        {
+          "name": "Get recommendations default limit (5)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/recommendations", "host": ["{{gatewayUrl}}"], "path": ["api","recommendations"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Returns 200', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Response is an array', function () { pm.expect(body).to.be.an('array'); });",
+            "pm.test('At most 5 results (default limit)', function () { pm.expect(body.length).to.be.at.most(5); });",
+            "if (body.length > 0) {",
+            "    pm.test('Each item has bookId (integer)', function () {",
+            "        body.forEach(r => pm.expect(r.bookId).to.be.a('number'));",
+            "    });",
+            "    pm.test('Each item has score (number)', function () {",
+            "        body.forEach(r => pm.expect(r.score).to.be.a('number'));",
+            "    });",
+            "}"
+          ]}}]
+        },
+        {
+          "name": "Get recommendations limit=1",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/recommendations?limit=1",
+              "host": ["{{gatewayUrl}}"], "path": ["api","recommendations"],
+              "query": [{ "key": "limit", "value": "1" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Returns 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('At most 1 result', function () { pm.expect(pm.response.json().length).to.be.at.most(1); });"
+          ]}}]
+        },
+        {
+          "name": "Get recommendations limit=10",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/recommendations?limit=10",
+              "host": ["{{gatewayUrl}}"], "path": ["api","recommendations"],
+              "query": [{ "key": "limit", "value": "10" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Returns 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('At most 10 results', function () { pm.expect(pm.response.json().length).to.be.at.most(10); });"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "4 - Internal Book Update",
+      "item": [
+        {
+          "name": "Add test book via internal API",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/recommendations/internal/books/update",
+              "host": ["{{gatewayUrl}}"], "path": ["api","recommendations","internal","books","update"]
+            },
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staffToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": {{testBookId}},\n  \"title\": \"Software Testing Handbook\",\n  \"description\": \"A comprehensive guide to software testing, quality assurance, and automated test strategies.\"\n}"
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Book update returns 200', function () { pm.response.to.have.status(200); });"
+          ]}}]
+        },
+        {
+          "name": "Update same book again (idempotent)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/recommendations/internal/books/update",
+              "host": ["{{gatewayUrl}}"], "path": ["api","recommendations","internal","books","update"]
+            },
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staffToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": {{testBookId}},\n  \"title\": \"Software Testing Handbook\",\n  \"description\": \"A comprehensive guide to software testing, quality assurance, and automated test strategies.\"\n}"
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Repeated book update returns 200 (idempotent)', function () { pm.response.to.have.status(200); });"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "5 - Internal Loan Update",
+      "item": [
+        {
+          "name": "Seed loan record for current user",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/recommendations/internal/loans/update",
+              "host": ["{{gatewayUrl}}"], "path": ["api","recommendations","internal","loans","update"]
+            },
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staffToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"loanId\": 9999,\n  \"userId\": {{userId}},\n  \"bookId\": 1,\n  \"timestamp\": \"2026-04-13T10:00:00Z\"\n}"
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Loan seed returns 200', function () { pm.response.to.have.status(200); });"
+          ]}}]
+        },
+        {
+          "name": "Seed same loan again (idempotent - no duplicate)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/recommendations/internal/loans/update",
+              "host": ["{{gatewayUrl}}"], "path": ["api","recommendations","internal","loans","update"]
+            },
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staffToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"loanId\": 9999,\n  \"userId\": {{userId}},\n  \"bookId\": 1,\n  \"timestamp\": \"2026-04-13T10:00:00Z\"\n}"
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Repeated loan seed returns 200 (idempotent)', function () { pm.response.to.have.status(200); });"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "6 - Recommendation Engine",
+      "item": [
+        {
+          "name": "Get recommendations after seeding data",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/recommendations", "host": ["{{gatewayUrl}}"], "path": ["api","recommendations"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Returns 200', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Response is an array', function () { pm.expect(body).to.be.an('array'); });",
+            "pm.test('Results non-empty after seeding loan history', function () { pm.expect(body.length).to.be.greaterThan(0); });",
+            "pm.test('Each result has a numeric bookId', function () {",
+            "    body.forEach(r => pm.expect(r.bookId).to.be.a('number'));",
+            "});",
+            "pm.test('Each result has a numeric score', function () {",
+            "    body.forEach(r => pm.expect(r.score).to.be.a('number'));",
+            "});",
+            "pm.test('Borrowed book (id=1) is NOT in recommendations', function () {",
+            "    const ids = body.map(r => r.bookId);",
+            "    pm.expect(ids).to.not.include(1);",
+            "});",
+            "console.log('Recommendations after seeding:', JSON.stringify(body));"
+          ]}}]
+        },
+        {
+          "name": "Get top recommendation (limit=1) after seeding",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/recommendations?limit=1",
+              "host": ["{{gatewayUrl}}"], "path": ["api","recommendations"],
+              "query": [{ "key": "limit", "value": "1" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Returns 200', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Exactly 1 result returned for limit=1', function () { pm.expect(body.length).to.equal(1); });",
+            "pm.test('Top recommendation has valid bookId', function () {",
+            "    pm.expect(body[0].bookId).to.be.a('number');",
+            "    pm.expect(body[0].bookId).to.be.greaterThan(0);",
+            "});",
+            "pm.test('Top recommendation has a score', function () {",
+            "    pm.expect(body[0].score).to.be.a('number');",
+            "});",
+            "console.log('Top recommendation:', JSON.stringify(body[0]));"
+          ]}}]
+        }
+      ]
+    }
+
+  ]
+}

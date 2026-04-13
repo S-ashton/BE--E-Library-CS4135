@@ -12,13 +12,16 @@ import org.springframework.web.client.RestTemplate;
 public class BookServiceClient {
 
     private final String gatewayBaseUrl;
+    private final String bookServiceDirectUrl;
     private final RestTemplate restTemplate;
 
     public BookServiceClient(
             @Value("${services.gateway.base-url:http://localhost:8080}") String gatewayBaseUrl,
+            @Value("${services.book.base-url:http://localhost:8082}") String bookServiceDirectUrl,
             RestTemplate restTemplate
     ) {
         this.gatewayBaseUrl = gatewayBaseUrl;
+        this.bookServiceDirectUrl = bookServiceDirectUrl;
         this.restTemplate = restTemplate;
     }
 
@@ -54,17 +57,14 @@ public class BookServiceClient {
     }
 
     public void changeCopyStatus(Long copyId, String status, Long userId, String authorization) {
-        String url = gatewayBaseUrl + "/api/books/changeStatus?status=" + status;
+        String url = bookServiceDirectUrl + "/api/books/changeStatus?copyId=" + copyId + "&status=" + status;
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-Authenticated-User", "loan-service");
+        headers.set("X-Authenticated-Role", "STAFF");
         headers.set("X-Authenticated-User-Id", String.valueOf(userId));
 
-        if (authorization != null && !authorization.isBlank()) {
-            headers.set(HttpHeaders.AUTHORIZATION, authorization);
-        }
-
-        HttpEntity<Long> requestEntity = new HttpEntity<>(copyId, headers);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
 
         restTemplate.exchange(
                 url,

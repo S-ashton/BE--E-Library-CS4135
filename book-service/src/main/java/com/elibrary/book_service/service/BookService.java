@@ -250,7 +250,10 @@ public class BookService {
     @Transactional
     public CopyResponseDTO getAvailableCopy(Long bookId) throws IOException {
         List<BookCopy> availableCopies = copyRepository.findByBookIdAndStatus(bookId, Status.AVAILABLE)
-            .orElseThrow(() -> new CopyNotFoundException("There are no available copies of this title"));
+            .orElse(java.util.Collections.emptyList());
+        if (availableCopies.isEmpty()) {
+            throw new CopyNotFoundException("There are no available copies of this title");
+        }
         return availableCopies.get(0).toDto();
     }
 

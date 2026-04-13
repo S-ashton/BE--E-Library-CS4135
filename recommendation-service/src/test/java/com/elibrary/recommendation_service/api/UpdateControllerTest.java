@@ -1,8 +1,8 @@
 package com.elibrary.recommendation_service.api;
 
-import com.elibrary.recommendation_service.embedding.BookEmbeddingCache;
 import com.elibrary.recommendation_service.model.Book;
 import com.elibrary.recommendation_service.model.LoanRecord;
+import com.elibrary.recommendation_service.service.BookUpdateService;
 import com.elibrary.recommendation_service.storage.FileStorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,27 +15,23 @@ import static org.junit.jupiter.api.Assertions.*;
 class UpdateControllerTest {
 
     private FileStorageService storage;
-    private BookEmbeddingCache embeddingCache;
+    private BookUpdateService bookUpdateService;
     private UpdateController controller;
 
     @BeforeEach
     void setup() {
         storage = mock(FileStorageService.class);
-        embeddingCache = mock(BookEmbeddingCache.class);
-        controller = new UpdateController(storage, embeddingCache);
+        bookUpdateService = mock(BookUpdateService.class);
+        controller = new UpdateController(storage, bookUpdateService);
     }
 
     @Test
-    void updatesBookAndEmbedsIt() {
+    void delegatesBookUpdate() {
         Book book = new Book(1L, "Title", "Desc");
-
-        when(storage.load(eq("data/books.json"), eq(List.class)))
-                .thenReturn(new ArrayList<>());
 
         controller.updateBook(book);
 
-        verify(storage).save(eq("data/books.json"), any());
-        verify(embeddingCache).addOrUpdateBook(book);
+        verify(bookUpdateService).updateBook(book);
     }
 
     @Test

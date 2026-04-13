@@ -41,14 +41,14 @@ class RecommendationEngineTest {
     void usesHybridScoring() {
 
         // Mock books.json
-        when(storage.load(eq("books.json"), eq(List.class)))
+        when(storage.load(eq("data/books.json"), eq(List.class)))
                 .thenReturn(List.of(
                         Map.of("id", 1, "title", "Magic", "description", "magic story"),
                         Map.of("id", 2, "title", "Science", "description", "science story")
                 ));
 
         // Mock loans.json
-        when(storage.load(eq("loans.json"), eq(Map.class)))
+        when(storage.load(eq("data/loans.json"), eq(Map.class)))
                 .thenReturn(Map.of("user1", List.of("1")));
 
         // Expected Book instances
@@ -87,13 +87,13 @@ class RecommendationEngineTest {
     @Test
     void popularityFallbackWhenNoLoans() {
 
-        when(storage.load(eq("books.json"), eq(List.class)))
+        when(storage.load(eq("data/books.json"), eq(List.class)))
                 .thenReturn(List.of(
                         Map.of("id", 1, "title", "A", "description", "x"),
                         Map.of("id", 2, "title", "B", "description", "y")
                 ));
 
-        when(storage.load(eq("loans.json"), eq(Map.class)))
+        when(storage.load(eq("data/loans.json"), eq(Map.class)))
                 .thenReturn(Map.of());
 
         List<Recommendation> recs = engine.recommend("userX", 10);
