@@ -12,10 +12,16 @@ import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@ConditionalOnProperty(
+        name = "book.messaging.enabled",
+        havingValue = "true",
+        matchIfMissing = true
+)
 public class MessagingConfig {
 
     @Value("${loan.events.exchange}")
