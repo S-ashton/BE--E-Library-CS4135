@@ -7,16 +7,18 @@ public class LoanBorrowedEvent {
 
     private UUID loanId;
     private Long userId;
-    private UUID bookId;
+    private Long bookId;
+    private Long copyId;
     private LocalDateTime timestamp;
 
     public LoanBorrowedEvent() {
     }
 
-    public LoanBorrowedEvent(UUID loanId, Long userId, UUID bookId, LocalDateTime timestamp) {
+    public LoanBorrowedEvent(UUID loanId, Long userId, Long bookId, Long copyId, LocalDateTime timestamp) {
         this.loanId = loanId;
         this.userId = userId;
         this.bookId = bookId;
+        this.copyId = copyId;
         this.timestamp = timestamp;
     }
 
@@ -24,31 +26,19 @@ public class LoanBorrowedEvent {
         return loanId;
     }
 
-    public void setLoanId(UUID loanId) {
-        this.loanId = loanId;
-    }
-
     public Long getUserId() {
         return userId;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public UUID getBookId() {
+    public Long getBookId() {
         return bookId;
     }
 
-    public void setBookId(UUID bookId) {
-        this.bookId = bookId;
+    public Long getCopyId() {
+        return copyId;
     }
 
     public LocalDateTime getTimestamp() {
         return timestamp;
-    }
-
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
     }
 }
