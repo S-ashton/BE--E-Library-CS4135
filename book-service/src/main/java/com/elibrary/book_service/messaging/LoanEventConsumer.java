@@ -22,7 +22,7 @@ public class LoanEventConsumer {
         this.bookService = bookService;
     }
 
-   @RabbitListener(queues = "loan.events")
+   @RabbitListener(queues = "${loan.events.borrowed-queue}")
     public void handleBorrowed(LoanBorrowedEvent event,
                             @Header(AmqpHeaders.RECEIVED_ROUTING_KEY) String routingKey) {
         log.info("Loan borrowed event received, routing key: {}", routingKey);
