@@ -1,29 +1,43 @@
 package com.elibrary.loan_service.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-
-import java.util.UUID;
 
 @Schema(description = "Borrow request payload")
 public class BorrowRequestDTO {
 
-    @Schema(description = "ID of the book to borrow", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+    @Schema(description = "Book title ID to borrow", example = "1")
     @NotNull(message = "Book ID is required")
-    private UUID bookId;
+    private Long bookId;
+
+    @Schema(description = "Recipient email for reminders and overdue alerts", example = "alice@elibrary.ie")
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email must be a valid format")
+    private String email;
 
     public BorrowRequestDTO() {
     }
 
-    public BorrowRequestDTO(UUID bookId) {
+    public BorrowRequestDTO(Long bookId, String email) {
         this.bookId = bookId;
+        this.email = email;
     }
 
-    public UUID getBookId() {
+    public Long getBookId() {
         return bookId;
     }
 
-    public void setBookId(UUID bookId) {
+    public void setBookId(Long bookId) {
         this.bookId = bookId;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

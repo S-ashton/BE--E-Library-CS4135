@@ -7,13 +7,33 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface NotificationTaskRepository extends JpaRepository<NotificationTask, UUID> {
 
-    List<NotificationTask> findByLoanIdAndStatus(UUID loanId, NotificationStatus status);
+    List<NotificationTask> findByStatusAndScheduledAtBefore(
+            NotificationStatus status,
+            LocalDateTime scheduledAt
+    );
 
-    boolean existsByLoanIdAndTypeAndStatus(UUID loanId, NotificationType type, NotificationStatus status);
+    List<NotificationTask> findByLoanIdAndStatus(
+            UUID loanId,
+            NotificationStatus status
+    );
 
-    List<NotificationTask> findByStatusAndScheduledAtBefore(NotificationStatus status, LocalDateTime time);
+    boolean existsByLoanIdAndTypeAndStatus(
+            UUID loanId,
+            NotificationType type,
+            NotificationStatus status
+    );
+
+    boolean existsByLoanIdAndTypeAndScheduledAtBetween(
+            UUID loanId,
+            NotificationType type,
+            LocalDateTime start,
+            LocalDateTime end
+    );
+
+    Optional<NotificationTask> findTopByLoanIdOrderByScheduledAtAsc(UUID loanId);
 }

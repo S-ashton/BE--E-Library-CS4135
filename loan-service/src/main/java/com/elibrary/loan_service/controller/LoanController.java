@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -45,9 +46,10 @@ public class LoanController {
     public ResponseEntity<LoanDTO> borrowBook(
             @Valid @RequestBody BorrowRequestDTO request,
             @Parameter(description = "Trusted identity header forwarded by gateway")
-            @RequestHeader("X-Authenticated-User-Id") Long userId
+            @RequestHeader("X-Authenticated-User-Id") Long userId,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization
     ) {
-        LoanDTO response = loanService.borrowBook(userId, request);
+        LoanDTO response = loanService.borrowBook(userId, request, authorization);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -62,8 +64,11 @@ public class LoanController {
             @ApiResponse(responseCode = "409", description = "Loan already returned", content = @Content)
     })
     @PostMapping("/{id}/return")
-    public ResponseEntity<LoanDTO> returnLoan(@PathVariable("id") UUID loanId) {
-        LoanDTO response = loanService.returnLoan(loanId);
+    public ResponseEntity<LoanDTO> returnLoan(
+            @PathVariable("id") UUID loanId,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization
+    ) {
+        LoanDTO response = loanService.returnLoan(loanId, authorization);
         return ResponseEntity.ok(response);
     }
 

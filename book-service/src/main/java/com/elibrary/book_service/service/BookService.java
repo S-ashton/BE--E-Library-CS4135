@@ -236,6 +236,7 @@ public class BookService {
         return books;
     }
 
+    @Transactional
     public List<TitleResponseDTO> titlesByIds(List<Long> bookIds){
         List<TitleResponseDTO> books = new ArrayList<>();
         for (Long num : bookIds) {      //TODO: Add exception for non-existent title/id
@@ -246,9 +247,27 @@ public class BookService {
         return books;
     }
 
-    public CopyResponseDTO getAvailableCopy(Long bookId){
+    @Transactional
+    public CopyResponseDTO getAvailableCopy(Long bookId) throws IOException {
         List<BookCopy> availableCopies = copyRepository.findByBookIdAndStatus(bookId, Status.AVAILABLE)
-            .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists"));;
+            .orElseThrow(() -> new CopyNotFoundException("There are no available copies of this title"));
         return availableCopies.get(0).toDto();
+    }
+
+    @Transactional
+    public Integer countCopies(Long bookId, Status status){
+        int countCopies;
+
+        if(status!=null){
+            List<BookCopy> copies = copyRepository.findByBookIdAndStatus(bookId, status)
+                .orElseThrow(() -> new CopyNotFoundException("No copies of this title with this status exist"));
+            countCopies = copies.size();
+        }else{
+            List<BookCopy> copies = copyRepository.findByBookId(bookId)
+                .orElseThrow(() -> new CopyNotFoundException("There are no copies of this title"));
+            countCopies = copies.size();
+        }
+
+        return countCopies;
     }
 }

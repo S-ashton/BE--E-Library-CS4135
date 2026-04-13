@@ -65,7 +65,7 @@ public class BookController {
     })
     @PostMapping("/addCopy")
     public ResponseEntity<CopyResponseDTO> addCopy(
-            @Valid @RequestBody Long titleId,
+            @Valid @RequestParam Long titleId,
             @Parameter(description = "Trusted identity header forwarded by gateway")
             @RequestHeader("X-Authenticated-User-Id") Long userId
     ) {
@@ -87,7 +87,8 @@ public class BookController {
     })
     @PutMapping("/changeStatus")
     public ResponseEntity<CopyResponseDTO> changeStatus(
-            @Valid @RequestBody Long copyId, Status status,
+            @Valid @RequestParam Long copyId,
+            @Valid @RequestParam Status status,
             @Parameter(description = "Trusted identity header forwarded by gateway")
             @RequestHeader("X-Authenticated-User-Id") Long userId 
     ) {
@@ -166,8 +167,27 @@ public class BookController {
     @GetMapping("/getAvailableCopy")
     public ResponseEntity<CopyResponseDTO> getAvailableCopy(
         @RequestParam Long bookId
-    ){
+    ) throws IOException{
         CopyResponseDTO response = bookService.getAvailableCopy(bookId); 
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Operation(
+        summary = "Find how many copies have a certain status",
+        description = "Count the number of copies of a title with the given status, or the total number of copies of that title if no status is given"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Copy details returned successfully",
+                    content = @Content(schema = @Schema(implementation = Integer.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)    //TODO: Clarify
+    })
+    @GetMapping("/countCopies")
+    public ResponseEntity<Integer> countCopies(
+        @RequestParam Long bookId,
+        @RequestParam(required = false) Status status
+    ){
+        Integer response = bookService.countCopies(bookId, status); 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

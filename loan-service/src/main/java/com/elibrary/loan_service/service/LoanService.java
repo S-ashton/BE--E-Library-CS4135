@@ -1,10 +1,16 @@
 package com.elibrary.loan_service.service;
 
+import com.elibrary.loan_service.client.BookCopyResponseDTO;
 import com.elibrary.loan_service.client.BookServiceClient;
-import com.elibrary.loan_service.domain.*;
+import com.elibrary.loan_service.domain.Loan;
+import com.elibrary.loan_service.domain.LoanStatus;
+import com.elibrary.loan_service.domain.NotificationStatus;
+import com.elibrary.loan_service.domain.NotificationTask;
+import com.elibrary.loan_service.domain.NotificationType;
 import com.elibrary.loan_service.dto.BorrowRequestDTO;
 import com.elibrary.loan_service.dto.LoanDTO;
 import com.elibrary.loan_service.exception.DuplicateActiveLoanException;
+import com.elibrary.loan_service.exception.LoanAlreadyReturnedException;
 import com.elibrary.loan_service.exception.LoanNotFoundException;
 import com.elibrary.loan_service.mapper.LoanMapper;
 import com.elibrary.loan_service.messaging.LoanBorrowedEvent;
@@ -19,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -35,42 +42,82 @@ public class LoanService {
     private final LoanMapper loanMapper;
     private final BookServiceClient bookServiceClient;
     private final LoanEventPublisher loanEventPublisher;
+    private final EmailNotificationService emailNotificationService;
 
-    public LoanService(LoanRepository loanRepository,
-                       NotificationTaskRepository notificationTaskRepository,
-                       LoanMapper loanMapper,
-                       BookServiceClient bookServiceClient,
-                       LoanEventPublisher loanEventPublisher) {
+    public LoanService(
+            LoanRepository loanRepository,
+            NotificationTaskRepository notificationTaskRepository,
+            LoanMapper loanMapper,
+            BookServiceClient bookServiceClient,
+            LoanEventPublisher loanEventPublisher,
+            EmailNotificationService emailNotificationService
+    ) {
         this.loanRepository = loanRepository;
         this.notificationTaskRepository = notificationTaskRepository;
         this.loanMapper = loanMapper;
         this.bookServiceClient = bookServiceClient;
         this.loanEventPublisher = loanEventPublisher;
+        this.emailNotificationService = emailNotificationService;
     }
 
     @Transactional
-    public LoanDTO borrowBook(Long userId, BorrowRequestDTO request) {
-        boolean duplicateExists = loanRepository.existsByUserIdAndBookIdAndStatus(
+    public LoanDTO borrowBook(Long userId, BorrowRequestDTO request, String authorization) {
+        boolean hasActiveLoan = loanRepository.existsByUserIdAndBookIdAndStatus(
                 userId,
                 request.getBookId(),
                 LoanStatus.ACTIVE
         );
 
-        if (duplicateExists) {
-            throw new DuplicateActiveLoanException("User already has an active loan for this book");
+        boolean hasOverdueLoan = loanRepository.existsByUserIdAndBookIdAndStatus(
+                userId,
+                request.getBookId(),
+                LoanStatus.OVERDUE
+        );
+
+        if (hasActiveLoan || hasOverdueLoan) {
+            throw new DuplicateActiveLoanException("User already has an active or overdue loan for this book");
         }
 
-        bookServiceClient.reserveBook(request.getBookId(), userId);
+        BookCopyResponseDTO availableCopy = bookServiceClient.getAvailableCopy(
+                request.getBookId(),
+                authorization
+        );
+
+        Long copyId = availableCopy.getId();
+
+        bookServiceClient.changeCopyStatus(
+                copyId,
+                "ON_LOAN",
+                userId,
+                authorization
+        );
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime dueDate = now.plusDays(14);
 
-        Loan loan = new Loan(userId, request.getBookId(), now, dueDate, LoanStatus.ACTIVE);
+        Loan loan = new Loan(
+                userId,
+                request.getBookId(),
+                copyId,
+                now,
+                dueDate,
+                LoanStatus.ACTIVE
+        );
+
         Loan savedLoan = loanRepository.save(loan);
+
+        try {
+            log.info("Attempting borrow confirmation email for loanId={} to={}", savedLoan.getId(), request.getEmail());
+            emailNotificationService.sendBorrowConfirmation(request.getEmail(), savedLoan);
+            log.info("Borrow confirmation email sent for loanId={}", savedLoan.getId());
+        } catch (Exception ex) {
+            log.warn("Borrow confirmation email failed for loanId={}", savedLoan.getId(), ex);
+        }
 
         NotificationTask reminderTask = new NotificationTask(
                 savedLoan.getId(),
                 savedLoan.getUserId(),
+                request.getEmail(),
                 NotificationType.DUE_DATE_REMINDER,
                 savedLoan.getDueDate().minusDays(1)
         );
@@ -81,6 +128,7 @@ public class LoanService {
                     savedLoan.getId(),
                     savedLoan.getUserId(),
                     savedLoan.getBookId(),
+                    savedLoan.getCopyId(),
                     LocalDateTime.now()
             );
             loanEventPublisher.publishLoanBorrowed(event);
@@ -92,9 +140,13 @@ public class LoanService {
     }
 
     @Transactional
-    public LoanDTO returnLoan(UUID loanId) {
+    public LoanDTO returnLoan(UUID loanId, String authorization) {
         Loan loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new LoanNotFoundException("Loan not found"));
+
+        if (loan.getStatus() == LoanStatus.RETURNED) {
+            throw new LoanAlreadyReturnedException("Loan has already been returned");
+        }
 
         LocalDateTime returnedAt = LocalDateTime.now();
         BigDecimal fineAmount = calculateFine(loan.getDueDate(), returnedAt);
@@ -103,20 +155,29 @@ public class LoanService {
         Loan savedLoan = loanRepository.save(loan);
 
         List<NotificationTask> pendingTasks =
-                notificationTaskRepository.findByLoanIdAndStatus(savedLoan.getId(), NotificationStatus.PENDING);
+                notificationTaskRepository.findByLoanIdAndStatus(
+                        savedLoan.getId(),
+                        NotificationStatus.PENDING
+                );
 
         for (NotificationTask task : pendingTasks) {
             task.cancel();
         }
         notificationTaskRepository.saveAll(pendingTasks);
 
-        bookServiceClient.returnBook(savedLoan.getBookId(), savedLoan.getUserId());
+        bookServiceClient.changeCopyStatus(
+                savedLoan.getCopyId(),
+                "AVAILABLE",
+                savedLoan.getUserId(),
+                authorization
+        );
 
         try {
             LoanReturnedEvent event = new LoanReturnedEvent(
                     savedLoan.getId(),
                     savedLoan.getUserId(),
                     savedLoan.getBookId(),
+                    savedLoan.getCopyId(),
                     LocalDateTime.now()
             );
             loanEventPublisher.publishLoanReturned(event);
@@ -146,20 +207,38 @@ public class LoanService {
             loan.markOverdue();
             loanRepository.save(loan);
 
-            boolean overdueAlertExists = notificationTaskRepository.existsByLoanIdAndTypeAndStatus(
-                    loan.getId(),
-                    NotificationType.OVERDUE_ALERT,
-                    NotificationStatus.PENDING
-            );
+            LocalDate today = LocalDate.now();
+            LocalDateTime startOfToday = today.atStartOfDay();
+            LocalDateTime startOfTomorrow = today.plusDays(1).atStartOfDay();
 
-            if (!overdueAlertExists) {
+            boolean overdueAlertAlreadyScheduledToday =
+                    notificationTaskRepository.existsByLoanIdAndTypeAndScheduledAtBetween(
+                            loan.getId(),
+                            NotificationType.OVERDUE_ALERT,
+                            startOfToday,
+                            startOfTomorrow
+                    );
+
+            if (!overdueAlertAlreadyScheduledToday) {
+                String recipientEmail = notificationTaskRepository.findTopByLoanIdOrderByScheduledAtAsc(loan.getId())
+                        .map(NotificationTask::getRecipientEmail)
+                        .orElse(null);
+
+                if (recipientEmail == null || recipientEmail.isBlank()) {
+                    log.warn("Skipping overdue notification for loan {} because no recipient email was found", loan.getId());
+                    continue;
+                }
+
                 NotificationTask overdueTask = new NotificationTask(
                         loan.getId(),
                         loan.getUserId(),
+                        recipientEmail,
                         NotificationType.OVERDUE_ALERT,
                         LocalDateTime.now()
                 );
+
                 notificationTaskRepository.save(overdueTask);
+                log.info("Created overdue notification task for loan {}", loan.getId());
             }
 
             log.info("Marked loan {} as overdue", loan.getId());
@@ -178,7 +257,6 @@ public class LoanService {
                 processNotificationTask(task);
                 task.markSent();
                 notificationTaskRepository.save(task);
-
                 log.info("Processed {} notification for loan {}", task.getType(), task.getLoanId());
             } catch (Exception ex) {
                 task.markFailed();
@@ -197,37 +275,11 @@ public class LoanService {
         Loan loan = loanRepository.findById(task.getLoanId())
                 .orElseThrow(() -> new LoanNotFoundException("Loan not found for notification task"));
 
-        switch (task.getType()) {
-            case DUE_DATE_REMINDER -> handleDueDateReminder(task, loan);
-            case OVERDUE_ALERT -> handleOverdueAlert(task, loan);
-            default -> throw new IllegalStateException("Unsupported notification type: " + task.getType());
-        }
-    }
-
-    private void handleDueDateReminder(NotificationTask task, Loan loan) {
-        if (loan.getStatus() != LoanStatus.ACTIVE) {
-            throw new IllegalStateException("Due date reminder can only be sent for active loans");
+        if (loan.getStatus() == LoanStatus.RETURNED) {
+            throw new IllegalStateException("Notifications should not be sent for returned loans");
         }
 
-        log.info(
-                "Due date reminder sent for loanId={}, userId={}, dueDate={}",
-                task.getLoanId(),
-                task.getUserId(),
-                loan.getDueDate()
-        );
-    }
-
-    private void handleOverdueAlert(NotificationTask task, Loan loan) {
-        if (loan.getStatus() != LoanStatus.OVERDUE) {
-            throw new IllegalStateException("Overdue alert can only be sent for overdue loans");
-        }
-
-        log.info(
-                "Overdue alert sent for loanId={}, userId={}, dueDate={}",
-                task.getLoanId(),
-                task.getUserId(),
-                loan.getDueDate()
-        );
+        emailNotificationService.sendNotification(task, loan);
     }
 
     private BigDecimal calculateFine(LocalDateTime dueDate, LocalDateTime returnedAt) {
