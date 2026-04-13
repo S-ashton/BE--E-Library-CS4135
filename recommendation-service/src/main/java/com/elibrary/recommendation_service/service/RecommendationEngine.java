@@ -58,22 +58,28 @@ public class RecommendationEngine {
         if (loans == null) loans = new HashMap<>();
 
         List<String> userLoans = loans.getOrDefault(userId, List.of());
+        Set<Long> alreadyBorrowed = userLoans.stream()
+                .map(Long::parseLong)
+                .collect(Collectors.toSet());
 
-        // No history -> popularity fallback
+        List<Book> candidateBooks = books.stream()
+                .filter(b -> !alreadyBorrowed.contains(b.getId()))
+                .toList();
+
         if (userLoans.isEmpty()) {
-            return popularityFallback(books, loans, limit);
+            return popularityFallback(candidateBooks, loans, limit);
         }
 
         float[] userEmbedding = buildUserEmbedding(userLoans, books);
         if (userEmbedding == null) {
-            return popularityFallback(books, loans, limit);
+            return popularityFallback(candidateBooks, loans, limit);
         }
 
         // Collaborative filtering scores
         Map<Long, Double> cfScores = cfService.computeScores(userId, loans);
 
         // Hybrid scoring
-        return books.stream()
+        return candidateBooks.stream()
                 .map(book -> {
                     float[] bookEmbedding = embeddingCache.getEmbedding(book);
 
@@ -135,7 +141,7 @@ public class RecommendationEngine {
         return avg;
     }
 
-    private List<Recommendation> popularityFallback(List<Book> books,
+    private List<Recommendation> popularityFallback(List<Book> candidateBooks,
                                                     Map<String, List<String>> loans,
                                                     int limit) {
 
@@ -148,7 +154,7 @@ public class RecommendationEngine {
             }
         }
 
-        return books.stream()
+        return candidateBooks.stream()
                 .map(b -> new Recommendation(
                         b.getId(),
                         borrowCounts.getOrDefault(b.getId(), 0)

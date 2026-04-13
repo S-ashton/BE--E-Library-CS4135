@@ -1,0 +1,909 @@
+{
+  "info": {
+    "_postman_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+    "name": "Book End-To-End",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "gatewayUrl",    "value": "http://localhost:8080", "type": "string" },
+    { "key": "userToken",     "value": "", "type": "string" },
+    { "key": "staffToken",    "value": "", "type": "string" },
+    { "key": "testBookTitle", "value": "", "type": "string" },
+    { "key": "testBookId",    "value": "", "type": "string" },
+    { "key": "testCopyId",    "value": "", "type": "string" }
+  ],
+  "item": [
+
+    {
+      "name": "1 - Auth Setup",
+      "item": [
+        {
+          "name": "Register USER account",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/register", "host": ["{{gatewayUrl}}"], "path": ["api","auth","register"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"book-user@elibrary.ie\",\n  \"password\": \"Test@12345\",\n  \"role\": \"USER\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('USER account ready (201 or 409)', function () {",
+            "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Register STAFF account",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/register", "host": ["{{gatewayUrl}}"], "path": ["api","auth","register"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"book-staff@elibrary.ie\",\n  \"password\": \"Test@12345\",\n  \"role\": \"STAFF\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('STAFF account ready (201 or 409)', function () {",
+            "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Login as USER",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/login", "host": ["{{gatewayUrl}}"], "path": ["api","auth","login"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"book-user@elibrary.ie\",\n  \"password\": \"Test@12345\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('USER login returns 200', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Access token present', function () { pm.expect(body).to.have.property('token'); });",
+            "pm.collectionVariables.set('userToken', body.token);"
+          ]}}]
+        },
+        {
+          "name": "Login as STAFF",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/login", "host": ["{{gatewayUrl}}"], "path": ["api","auth","login"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"book-staff@elibrary.ie\",\n  \"password\": \"Test@12345\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('STAFF login returns 200', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Access token present', function () { pm.expect(body).to.have.property('token'); });",
+            "pm.collectionVariables.set('staffToken', body.token);"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "2 - Access Control",
+      "item": [
+        {
+          "name": "Add title without auth token (expect 401)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api","books","addTitle"] },
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",         "value": "Unauthorised Book", "type": "text" },
+                { "key": "author",        "value": "Nobody",           "type": "text" },
+                { "key": "description",   "value": "Should not be created.", "type": "text" },
+                { "key": "yearPublished", "value": "2020",             "type": "text" },
+                { "key": "genre",         "value": "NONFICTION",       "type": "text" },
+                { "key": "language",      "value": "ENGLISH",          "type": "text" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('No token on addTitle returns 401', function () { pm.response.to.have.status(401); });"
+          ]}}]
+        },
+        {
+          "name": "Add copy without auth token (expect 401)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/addCopy?titleId=1",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","addCopy"],
+              "query": [{ "key": "titleId", "value": "1" }]
+            },
+            "header": []
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('No token on addCopy returns 401', function () { pm.response.to.have.status(401); });"
+          ]}}]
+        },
+        {
+          "name": "Change copy status without auth token (expect 401)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/changeStatus?copyId=1&status=ON_LOAN",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","changeStatus"],
+              "query": [{ "key": "copyId", "value": "1" }, { "key": "status", "value": "ON_LOAN" }]
+            },
+            "header": []
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('No token on changeStatus returns 401', function () { pm.response.to.have.status(401); });"
+          ]}}]
+        },
+        {
+          "name": "USER role cannot add copy (expect 403)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/addCopy?titleId=1",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","addCopy"],
+              "query": [{ "key": "titleId", "value": "1" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('USER role on addCopy returns 403', function () { pm.response.to.have.status(403); });",
+            "pm.test('403 response has error body', function () {",
+            "    const body = pm.response.json();",
+            "    pm.expect(body).to.have.property('status', 403);",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "USER role cannot add title (expect 403)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api","books","addTitle"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",         "value": "Blocked Book", "type": "text" },
+                { "key": "author",        "value": "Nobody",       "type": "text" },
+                { "key": "description",   "value": "Blocked.",     "type": "text" },
+                { "key": "yearPublished", "value": "2020",         "type": "text" },
+                { "key": "genre",         "value": "NONFICTION",   "type": "text" },
+                { "key": "language",      "value": "ENGLISH",      "type": "text" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('USER role on addTitle returns 403', function () { pm.response.to.have.status(403); });"
+          ]}}]
+        },
+        {
+          "name": "USER role cannot change status (expect 403)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/changeStatus?copyId=1&status=ON_LOAN",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","changeStatus"],
+              "query": [{ "key": "copyId", "value": "1" }, { "key": "status", "value": "ON_LOAN" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('USER role on changeStatus returns 403', function () { pm.response.to.have.status(403); });"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "3 - Add Title (STAFF)",
+      "item": [
+        {
+          "name": "Add new book title",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.collectionVariables.set('testBookTitle', 'E2E-Book-Test-' + Date.now());"
+              ]}
+            },
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Add title returns 201', function () { pm.response.to.have.status(201); });",
+                "const body = pm.response.json();",
+                "pm.test('Response has id', function () { pm.expect(body).to.have.property('id'); });",
+                "pm.test('Response title matches request', function () {",
+                "    pm.expect(body.title).to.equal(pm.collectionVariables.get('testBookTitle'));",
+                "});",
+                "pm.test('Response has author', function () { pm.expect(body.author).to.equal('E2E Test Author'); });",
+                "pm.test('Response has description', function () { pm.expect(body).to.have.property('description'); });",
+                "pm.test('Response yearPublished matches', function () { pm.expect(body.yearPublished).to.equal(2024); });",
+                "pm.test('Response genre is NONFICTION', function () { pm.expect(body.genre).to.equal('NONFICTION'); });",
+                "pm.test('Response language is ENGLISH', function () { pm.expect(body.language).to.equal('ENGLISH'); });",
+                "pm.test('copiesAvailable is 1 on creation', function () { pm.expect(body.copiesAvailable).to.equal(1); });",
+                "pm.collectionVariables.set('testBookId', String(body.id));",
+                "console.log('Created test book, id:', body.id, 'title:', body.title);"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api","books","addTitle"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",         "value": "{{testBookTitle}}",                              "type": "text" },
+                { "key": "author",        "value": "E2E Test Author",                                "type": "text" },
+                { "key": "description",   "value": "A test book for end-to-end automated testing.", "type": "text" },
+                { "key": "yearPublished", "value": "2024",                                           "type": "text" },
+                { "key": "genre",         "value": "NONFICTION",                                     "type": "text" },
+                { "key": "language",      "value": "ENGLISH",                                        "type": "text" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add same title again (expect 409 duplicate)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api","books","addTitle"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",         "value": "{{testBookTitle}}",                              "type": "text" },
+                { "key": "author",        "value": "E2E Test Author",                                "type": "text" },
+                { "key": "description",   "value": "A test book for end-to-end automated testing.", "type": "text" },
+                { "key": "yearPublished", "value": "2024",                                           "type": "text" },
+                { "key": "genre",         "value": "NONFICTION",                                     "type": "text" },
+                { "key": "language",      "value": "ENGLISH",                                        "type": "text" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Duplicate title returns 409', function () { pm.response.to.have.status(409); });",
+            "const body = pm.response.json();",
+            "pm.test('Error message is present', function () { pm.expect(body).to.have.property('error'); });",
+            "pm.test('existingId is returned in conflict response', function () {",
+            "    pm.expect(body).to.have.property('existingId');",
+            "    pm.expect(String(body.existingId)).to.equal(pm.collectionVariables.get('testBookId'));",
+            "});"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "4 - Add Title Validation",
+      "item": [
+        {
+          "name": "Missing title field (expect 400)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api","books","addTitle"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "author",        "value": "Some Author",       "type": "text" },
+                { "key": "description",   "value": "Some description.", "type": "text" },
+                { "key": "yearPublished", "value": "2020",              "type": "text" },
+                { "key": "genre",         "value": "FANTASY",           "type": "text" },
+                { "key": "language",      "value": "ENGLISH",           "type": "text" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Missing title returns 400', function () { pm.response.to.have.status(400); });"
+          ]}}]
+        },
+        {
+          "name": "Missing author field (expect 400)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api","books","addTitle"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",         "value": "A Titleless Author Book", "type": "text" },
+                { "key": "description",   "value": "Some description.",       "type": "text" },
+                { "key": "yearPublished", "value": "2020",                    "type": "text" },
+                { "key": "genre",         "value": "FANTASY",                 "type": "text" },
+                { "key": "language",      "value": "ENGLISH",                 "type": "text" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Missing author returns 400', function () { pm.response.to.have.status(400); });"
+          ]}}]
+        },
+        {
+          "name": "Missing yearPublished (expect 400)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api","books","addTitle"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",       "value": "No Year Book",      "type": "text" },
+                { "key": "author",      "value": "Some Author",       "type": "text" },
+                { "key": "description", "value": "No year provided.", "type": "text" },
+                { "key": "genre",       "value": "FANTASY",           "type": "text" },
+                { "key": "language",    "value": "ENGLISH",           "type": "text" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Missing yearPublished returns 400', function () { pm.response.to.have.status(400); });"
+          ]}}]
+        },
+        {
+          "name": "Missing genre (expect 400)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api","books","addTitle"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",         "value": "Genreless Book",    "type": "text" },
+                { "key": "author",        "value": "Some Author",       "type": "text" },
+                { "key": "description",   "value": "No genre provided.", "type": "text" },
+                { "key": "yearPublished", "value": "2020",              "type": "text" },
+                { "key": "language",      "value": "ENGLISH",           "type": "text" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Missing genre returns 400', function () { pm.response.to.have.status(400); });"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "5 - Get Title",
+      "item": [
+        {
+          "name": "Get title by ID (USER)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/{{testBookId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","{{testBookId}}"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Get title returns 201', function () { pm.response.to.have.status(201); });",
+            "const body = pm.response.json();",
+            "pm.test('Response id matches', function () {",
+            "    pm.expect(String(body.id)).to.equal(pm.collectionVariables.get('testBookId'));",
+            "});",
+            "pm.test('Response title matches', function () {",
+            "    pm.expect(body.title).to.equal(pm.collectionVariables.get('testBookTitle'));",
+            "});",
+            "pm.test('Response has all required fields', function () {",
+            "    pm.expect(body).to.have.property('id');",
+            "    pm.expect(body).to.have.property('title');",
+            "    pm.expect(body).to.have.property('author');",
+            "    pm.expect(body).to.have.property('description');",
+            "    pm.expect(body).to.have.property('yearPublished');",
+            "    pm.expect(body).to.have.property('genre');",
+            "    pm.expect(body).to.have.property('language');",
+            "    pm.expect(body).to.have.property('copiesAvailable');",
+            "});",
+            "pm.test('copiesAvailable is a number', function () {",
+            "    pm.expect(body.copiesAvailable).to.be.a('number');",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Get title by ID (STAFF)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/{{testBookId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","{{testBookId}}"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('STAFF can get title (201)', function () { pm.response.to.have.status(201); });",
+            "pm.test('Response id matches', function () {",
+            "    pm.expect(String(pm.response.json().id)).to.equal(pm.collectionVariables.get('testBookId'));",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Get non-existent title (expect 404)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/999999",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","999999"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Non-existent title returns 404', function () { pm.response.to.have.status(404); });",
+            "pm.test('Error message present', function () {",
+            "    pm.expect(pm.response.json()).to.have.property('error');",
+            "});"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "6 - Search",
+      "item": [
+        {
+          "name": "Search by keyword (finds our test book)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/search?keyword=E2E-Book-Test",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","search"],
+              "query": [{ "key": "keyword", "value": "E2E-Book-Test" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Search returns 200', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Search result is an array', function () { pm.expect(body).to.be.an('array'); });",
+            "pm.test('Search finds our test book', function () {",
+            "    const ids = body.map(b => String(b.id));",
+            "    pm.expect(ids).to.include(pm.collectionVariables.get('testBookId'));",
+            "});",
+            "pm.test('Each result has required fields', function () {",
+            "    body.forEach(function(b) {",
+            "        pm.expect(b).to.have.property('id');",
+            "        pm.expect(b).to.have.property('title');",
+            "        pm.expect(b).to.have.property('author');",
+            "        pm.expect(b).to.have.property('genre');",
+            "        pm.expect(b).to.have.property('language');",
+            "    });",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Search by genre NONFICTION",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/search?genre=NONFICTION",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","search"],
+              "query": [{ "key": "genre", "value": "NONFICTION" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Genre search returns 200', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Genre search result is an array', function () { pm.expect(body).to.be.an('array'); });",
+            "pm.test('All results have genre NONFICTION', function () {",
+            "    body.forEach(function(b) {",
+            "        pm.expect(b.genre).to.equal('NONFICTION');",
+            "    });",
+            "});",
+            "pm.test('Our test book appears in NONFICTION results', function () {",
+            "    const ids = body.map(b => String(b.id));",
+            "    pm.expect(ids).to.include(pm.collectionVariables.get('testBookId'));",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Search by language ENGLISH",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/search?language=ENGLISH",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","search"],
+              "query": [{ "key": "language", "value": "ENGLISH" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Language search returns 200', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Language search result is an array', function () { pm.expect(body).to.be.an('array'); });",
+            "pm.test('All results have language ENGLISH', function () {",
+            "    body.forEach(function(b) { pm.expect(b.language).to.equal('ENGLISH'); });",
+            "});",
+            "pm.test('Our test book appears in ENGLISH results', function () {",
+            "    const ids = body.map(b => String(b.id));",
+            "    pm.expect(ids).to.include(pm.collectionVariables.get('testBookId'));",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Search with no params (matchAll)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/books/search", "host": ["{{gatewayUrl}}"], "path": ["api","books","search"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Match-all search returns 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('Match-all result is an array', function () { pm.expect(pm.response.json()).to.be.an('array'); });",
+            "pm.test('Match-all returns at least one result', function () {",
+            "    pm.expect(pm.response.json().length).to.be.greaterThan(0);",
+            "});"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "7 - Titles By IDs",
+      "item": [
+        {
+          "name": "titlesByIds single ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/titlesByIds?bookIds={{testBookId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","titlesByIds"],
+              "query": [{ "key": "bookIds", "value": "{{testBookId}}" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('titlesByIds returns 200', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Result is an array', function () { pm.expect(body).to.be.an('array'); });",
+            "pm.test('Array has exactly 1 element', function () { pm.expect(body).to.have.lengthOf(1); });",
+            "pm.test('Returned title id matches', function () {",
+            "    pm.expect(String(body[0].id)).to.equal(pm.collectionVariables.get('testBookId'));",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "titlesByIds with non-existent ID (expect 404)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/titlesByIds?bookIds=999999",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","titlesByIds"],
+              "query": [{ "key": "bookIds", "value": "999999" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('titlesByIds with bad ID returns 404', function () { pm.response.to.have.status(404); });",
+            "pm.test('Error message present', function () {",
+            "    pm.expect(pm.response.json()).to.have.property('error');",
+            "});"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "8 - Copy Management",
+      "item": [
+        {
+          "name": "Add a copy to test book (STAFF)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/addCopy?titleId={{testBookId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","addCopy"],
+              "query": [{ "key": "titleId", "value": "{{testBookId}}" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('addCopy returns 201', function () { pm.response.to.have.status(201); });",
+            "const body = pm.response.json();",
+            "pm.test('Copy has id', function () { pm.expect(body).to.have.property('id'); });",
+            "pm.test('Copy bookId matches test book', function () {",
+            "    pm.expect(String(body.bookId)).to.equal(pm.collectionVariables.get('testBookId'));",
+            "});",
+            "pm.test('New copy status is AVAILABLE', function () { pm.expect(body.status).to.equal('AVAILABLE'); });",
+            "pm.collectionVariables.set('testCopyId', String(body.id));",
+            "console.log('Added copy, copyId:', body.id);"
+          ]}}]
+        },
+        {
+          "name": "Add copy to non-existent title (expect 404)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/addCopy?titleId=999999",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","addCopy"],
+              "query": [{ "key": "titleId", "value": "999999" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('addCopy non-existent title returns 404', function () { pm.response.to.have.status(404); });",
+            "pm.test('Error message present', function () {",
+            "    pm.expect(pm.response.json()).to.have.property('error');",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Count all copies of test book",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/countCopies?bookId={{testBookId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","countCopies"],
+              "query": [{ "key": "bookId", "value": "{{testBookId}}" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('countCopies returns 200', function () { pm.response.to.have.status(200); });",
+            "const count = pm.response.json();",
+            "pm.test('Count is a number', function () { pm.expect(count).to.be.a('number'); });",
+            "pm.test('Count is at least 2 (original + added)', function () {",
+            "    pm.expect(count).to.be.at.least(2);",
+            "});",
+            "pm.collectionVariables.set('totalCopyCount', String(count));",
+            "console.log('Total copy count:', count);"
+          ]}}]
+        },
+        {
+          "name": "Count AVAILABLE copies of test book",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/countCopies?bookId={{testBookId}}&status=AVAILABLE",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","countCopies"],
+              "query": [{ "key": "bookId", "value": "{{testBookId}}" }, { "key": "status", "value": "AVAILABLE" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Count AVAILABLE returns 200', function () { pm.response.to.have.status(200); });",
+            "const count = pm.response.json();",
+            "pm.test('AVAILABLE count is a number', function () { pm.expect(count).to.be.a('number'); });",
+            "pm.test('AVAILABLE count is at least 2', function () { pm.expect(count).to.be.at.least(2); });",
+            "pm.collectionVariables.set('availableCopyCount', String(count));"
+          ]}}]
+        },
+        {
+          "name": "Count ON_LOAN copies of test book (expect 0)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/countCopies?bookId={{testBookId}}&status=ON_LOAN",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","countCopies"],
+              "query": [{ "key": "bookId", "value": "{{testBookId}}" }, { "key": "status", "value": "ON_LOAN" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Count ON_LOAN returns 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('ON_LOAN count is 0 (no loans yet)', function () {",
+            "    pm.expect(pm.response.json()).to.equal(0);",
+            "});"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "9 - Get Available Copy",
+      "item": [
+        {
+          "name": "Get available copy of test book",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/getAvailableCopy?bookId={{testBookId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","getAvailableCopy"],
+              "query": [{ "key": "bookId", "value": "{{testBookId}}" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('getAvailableCopy returns 200', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Copy has id', function () { pm.expect(body).to.have.property('id'); });",
+            "pm.test('Copy bookId matches test book', function () {",
+            "    pm.expect(String(body.bookId)).to.equal(pm.collectionVariables.get('testBookId'));",
+            "});",
+            "pm.test('Copy status is AVAILABLE', function () {",
+            "    pm.expect(body.status).to.equal('AVAILABLE');",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Get available copy for non-existent book (expect 409)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/getAvailableCopy?bookId=999999",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","getAvailableCopy"],
+              "query": [{ "key": "bookId", "value": "999999" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('No copies for non-existent book returns 409', function () { pm.response.to.have.status(409); });",
+            "pm.test('Error message present', function () {",
+            "    pm.expect(pm.response.json()).to.have.property('error');",
+            "});"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "10 - Change Copy Status",
+      "item": [
+        {
+          "name": "Change copy status to ON_LOAN (STAFF)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/changeStatus?copyId={{testCopyId}}&status=ON_LOAN",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","changeStatus"],
+              "query": [{ "key": "copyId", "value": "{{testCopyId}}" }, { "key": "status", "value": "ON_LOAN" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('changeStatus returns 201', function () { pm.response.to.have.status(201); });",
+            "const body = pm.response.json();",
+            "pm.test('Copy id matches', function () {",
+            "    pm.expect(String(body.id)).to.equal(pm.collectionVariables.get('testCopyId'));",
+            "});",
+            "pm.test('Copy status is now ON_LOAN', function () { pm.expect(body.status).to.equal('ON_LOAN'); });",
+            "pm.test('bookId still matches test book', function () {",
+            "    pm.expect(String(body.bookId)).to.equal(pm.collectionVariables.get('testBookId'));",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Change to same status again (expect 409 StatusMatchingException)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/changeStatus?copyId={{testCopyId}}&status=ON_LOAN",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","changeStatus"],
+              "query": [{ "key": "copyId", "value": "{{testCopyId}}" }, { "key": "status", "value": "ON_LOAN" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Duplicate status change returns 409', function () { pm.response.to.have.status(409); });",
+            "pm.test('Error message present', function () {",
+            "    pm.expect(pm.response.json()).to.have.property('error');",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Change status of non-existent copy (expect 409)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/changeStatus?copyId=999999&status=AVAILABLE",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","changeStatus"],
+              "query": [{ "key": "copyId", "value": "999999" }, { "key": "status", "value": "AVAILABLE" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Non-existent copy returns 409', function () { pm.response.to.have.status(409); });",
+            "pm.test('Error message present', function () {",
+            "    pm.expect(pm.response.json()).to.have.property('error');",
+            "});"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "11 - Post-Status-Change Verification",
+      "item": [
+        {
+          "name": "Count AVAILABLE copies after ON_LOAN change",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/countCopies?bookId={{testBookId}}&status=AVAILABLE",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","countCopies"],
+              "query": [{ "key": "bookId", "value": "{{testBookId}}" }, { "key": "status", "value": "AVAILABLE" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Post-change AVAILABLE count returns 200', function () { pm.response.to.have.status(200); });",
+            "const newCount = pm.response.json();",
+            "const prevCount = parseInt(pm.collectionVariables.get('availableCopyCount'));",
+            "pm.test('AVAILABLE count decreased by 1', function () {",
+            "    pm.expect(newCount).to.equal(prevCount - 1);",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Count ON_LOAN copies (expect 1)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/countCopies?bookId={{testBookId}}&status=ON_LOAN",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","countCopies"],
+              "query": [{ "key": "bookId", "value": "{{testBookId}}" }, { "key": "status", "value": "ON_LOAN" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('ON_LOAN count returns 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('ON_LOAN count is 1', function () { pm.expect(pm.response.json()).to.equal(1); });"
+          ]}}]
+        },
+        {
+          "name": "Get available copy still works (other copy)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/getAvailableCopy?bookId={{testBookId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","getAvailableCopy"],
+              "query": [{ "key": "bookId", "value": "{{testBookId}}" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Other copy still available (200)', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Returned copy is AVAILABLE', function () { pm.expect(body.status).to.equal('AVAILABLE'); });",
+            "pm.test('Returned copy is NOT the one set to ON_LOAN', function () {",
+            "    pm.expect(String(body.id)).to.not.equal(pm.collectionVariables.get('testCopyId'));",
+            "});"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "12 - Restore & Cleanup",
+      "item": [
+        {
+          "name": "Restore copy status back to AVAILABLE",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/changeStatus?copyId={{testCopyId}}&status=AVAILABLE",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","changeStatus"],
+              "query": [{ "key": "copyId", "value": "{{testCopyId}}" }, { "key": "status", "value": "AVAILABLE" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Restore to AVAILABLE returns 201', function () { pm.response.to.have.status(201); });",
+            "const body = pm.response.json();",
+            "pm.test('Copy status is now AVAILABLE', function () { pm.expect(body.status).to.equal('AVAILABLE'); });"
+          ]}}]
+        },
+        {
+          "name": "Verify AVAILABLE count restored to original",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/countCopies?bookId={{testBookId}}&status=AVAILABLE",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","countCopies"],
+              "query": [{ "key": "bookId", "value": "{{testBookId}}" }, { "key": "status", "value": "AVAILABLE" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Restored AVAILABLE count returns 200', function () { pm.response.to.have.status(200); });",
+            "const restoredCount = pm.response.json();",
+            "const originalCount = parseInt(pm.collectionVariables.get('availableCopyCount'));",
+            "pm.test('AVAILABLE count is restored to original value', function () {",
+            "    pm.expect(restoredCount).to.equal(originalCount);",
+            "});"
+          ]}}]
+        }
+      ]
+    }
+
+  ]
+}

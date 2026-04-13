@@ -49,10 +49,6 @@ public class JwtService {
         return new LoginResponse(token, expiresAt);
     }
 
-    public LoginResponse generateLoginResponse(User user) {
-        return generateAccessTokenResponse(user);
-    }
-
     public Claims parseToken(String token) {
         return jwtParser.parseSignedClaims(token).getPayload();
     }

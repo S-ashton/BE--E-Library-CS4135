@@ -227,7 +227,8 @@ services:
     environment:
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
-      SERVICES_BOOK_BASE_URL: http://api-gateway:8080
+      SERVICES_GATEWAY_BASE_URL: http://api-gateway:8080
+      SERVICES_BOOK_BASE_URL: http://book-service:8082
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-elibrary}
@@ -318,8 +319,6 @@ services:
     image: elasticsearch:8.17.0
     container_name: elasticsearch
     restart: unless-stopped
-    ports:
-      - "9200:9200"
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false

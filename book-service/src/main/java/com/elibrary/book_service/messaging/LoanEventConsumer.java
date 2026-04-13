@@ -21,9 +21,9 @@ public class LoanEventConsumer {
     }
 
     @RabbitListener(queues = "loan.events")
-    public void handleBorrowed(LoanReturnedEvent event,
+    public void handleReturned(LoanReturnedEvent event,
                             @Header(AmqpHeaders.RECEIVED_ROUTING_KEY) String routingKey) {
-        log.info("Loan borrowed event received, routing key: {}", routingKey);
+        log.info("Loan returned event received, routing key: {}", routingKey);
         // use event directly
     }
 }
