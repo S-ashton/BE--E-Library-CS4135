@@ -9,37 +9,43 @@ import co.elastic.clients.elasticsearch.core.SearchRequest;
 
 import com.elibrary.book_service.model.*;
 import com.elibrary.book_service.exceptions.*;
+import com.elibrary.book_service.messaging.*;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
-import co.elastic.clients.elasticsearch.core.search.HitsMetadata;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import java.util.stream.Collectors;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class BookService {
+
+    private static final Logger log = LoggerFactory.getLogger(BookService.class);
 
     private final TitleRepository bookRepository;
     private final CopyRepository copyRepository;
     private final ElasticsearchRepo esRepository;
     private final ElasticsearchClient esClient;
+    private final BookEventPublisher bookEventPublisher;
     private final MinioService minioService;
 
-    public BookService(TitleRepository bookRepository, CopyRepository copyRepository, ElasticsearchRepo esRepository, ElasticsearchClient esClient, MinioService minioService){
+    public BookService(TitleRepository bookRepository, CopyRepository copyRepository, ElasticsearchRepo esRepository, ElasticsearchClient esClient, BookEventPublisher bookEventPublisher, MinioService minioService){
         this.bookRepository = bookRepository;
         this.copyRepository = copyRepository;
         this.esRepository = esRepository;
         this.esClient = esClient;
+        this.bookEventPublisher = bookEventPublisher;
         this.minioService = minioService;
     }
 
@@ -79,7 +85,22 @@ public class BookService {
 
         copyRepository.save(new BookCopy(newTitle.getId(), Status.AVAILABLE));
 
-        //TODO: Send notification to Recommender
+        try {
+            BookAddedEvent event = new BookAddedEvent(
+                newTitle.getId(),
+                newTitle.getTitle(),
+                newTitle.getAuthor(), 
+                newTitle.getDescription(),
+                newTitle.getYearPublished(), 
+                newTitle.getGenre(),
+                newTitle.getCoverImageUrl(),
+                newTitle.getLanguage(),
+                1
+            );
+            bookEventPublisher.publishBookAdded(event);
+        } catch (Exception ex) {
+            log.warn("loan.borrowed publish failed for loanId={}", newTitle.getId(), ex);
+        }
 
         return newTitle.toDto();
     }
@@ -108,7 +129,7 @@ public class BookService {
         );
 
         if(currentCopy.getStatus().equals(status)){
-            throw new StatusMatchingException("This copy already has this status");  //TODO: Implement exception
+            throw new StatusMatchingException("This copy already has this status");
         }else{
             currentCopy.setStatus(status);
             currentCopy = copyRepository.save(currentCopy);
@@ -215,6 +236,7 @@ public class BookService {
         return books;
     }
 
+    @Transactional
     public List<TitleResponseDTO> titlesByIds(List<Long> bookIds){
         List<TitleResponseDTO> books = new ArrayList<>();
         for (Long num : bookIds) {      //TODO: Add exception for non-existent title/id
@@ -225,9 +247,27 @@ public class BookService {
         return books;
     }
 
-    public CopyResponseDTO getAvailableCopy(Long bookId){
+    @Transactional
+    public CopyResponseDTO getAvailableCopy(Long bookId) throws IOException {
         List<BookCopy> availableCopies = copyRepository.findByBookIdAndStatus(bookId, Status.AVAILABLE)
-            .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists"));;
+            .orElseThrow(() -> new CopyNotFoundException("There are no available copies of this title"));
         return availableCopies.get(0).toDto();
+    }
+
+    @Transactional
+    public Integer countCopies(Long bookId, Status status){
+        int countCopies;
+
+        if(status!=null){
+            List<BookCopy> copies = copyRepository.findByBookIdAndStatus(bookId, status)
+                .orElseThrow(() -> new CopyNotFoundException("No copies of this title with this status exist"));
+            countCopies = copies.size();
+        }else{
+            List<BookCopy> copies = copyRepository.findByBookId(bookId)
+                .orElseThrow(() -> new CopyNotFoundException("There are no copies of this title"));
+            countCopies = copies.size();
+        }
+
+        return countCopies;
     }
 }

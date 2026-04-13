@@ -13,4 +13,6 @@ public interface CopyRepository extends JpaRepository<BookCopy, Integer>{
       Optional<BookCopy> findById(Long copy_id);
 
       Optional<List<BookCopy>> findByBookIdAndStatus(Long bookId, Status status);
+
+      Optional<List<BookCopy>> findByBookId(Long bookId);
 }

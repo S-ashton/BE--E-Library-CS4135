@@ -2,11 +2,17 @@ package com.elibrary.api_gateway;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
 
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
@@ -35,6 +41,12 @@ class GatewayErrorResponseTests {
     @Autowired
     private WebTestClient webTestClient;
 
+    @Value("${app.jwt.secret}")
+    private String jwtSecret;
+
+    @Value("${app.jwt.issuer}")
+    private String jwtIssuer;
+
     @DynamicPropertySource
     static void registerPorts(DynamicPropertyRegistry registry) {
         registry.add("test.downstream.unavailable-port", () -> UNAVAILABLE_PORT);
@@ -50,7 +62,7 @@ class GatewayErrorResponseTests {
     void downstreamConnectionFailuresReturnStandardBadGatewayError() {
         webTestClient.get()
                 .uri("/api/books/test")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer test-token")
+                .header(HttpHeaders.AUTHORIZATION, authorizationHeader())
                 .exchange()
                 .expectStatus()
                 .isEqualTo(502)
@@ -69,7 +81,7 @@ class GatewayErrorResponseTests {
     void downstreamTimeoutsReturnStandardGatewayTimeoutError() {
         webTestClient.get()
                 .uri("/api/recommendations/slow")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer test-token")
+                .header(HttpHeaders.AUTHORIZATION, authorizationHeader())
                 .exchange()
                 .expectStatus()
                 .isEqualTo(504)
@@ -91,5 +103,22 @@ class GatewayErrorResponseTests {
         catch (IOException exception) {
             throw new IllegalStateException("Unable to find an unused port for gateway tests", exception);
         }
+    }
+
+    private String authorizationHeader() {
+        Instant issuedAt = Instant.now();
+        Instant expiresAt = issuedAt.plusSeconds(3600);
+        String token = Jwts.builder()
+                .subject("reader@elibrary.ie")
+                .issuer(jwtIssuer)
+                .issuedAt(Date.from(issuedAt))
+                .expiration(Date.from(expiresAt))
+                .claim("userId", 42L)
+                .claim("email", "reader@elibrary.ie")
+                .claim("role", "USER")
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8)))
+                .compact();
+
+        return "Bearer " + token;
     }
 }

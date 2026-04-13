@@ -190,12 +190,21 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_USER:-elibrary}
       MINIO_SECRET_KEY: ${MINIO_PASSWORD:-elibrary-dev-password}
       MINIO_BUCKET: ${MINIO_BUCKET:-book-covers}
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-elibrary}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-elibrary-dev-password}
     depends_on:
       config-server:
         condition: service_healthy
       discovery-server:
         condition: service_healthy
       user-service:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       postgres:
         condition: service_healthy
@@ -271,11 +280,16 @@ services:
     environment:
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
+      SPRING_RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-elibrary}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-elibrary-dev-password}
       EMBEDDING_SERVICE_URL: http://embedding-service:8000
     depends_on:
       config-server:
         condition: service_healthy
       discovery-server:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       book-service:
         condition: service_healthy
@@ -293,6 +307,7 @@ services:
       start_period: 40s
     networks:
       - internal
+      - data
 
 # NETWORKS
 # public: Only the API gateway

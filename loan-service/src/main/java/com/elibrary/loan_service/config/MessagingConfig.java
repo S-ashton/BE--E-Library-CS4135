@@ -1,6 +1,8 @@
 package com.elibrary.loan_service.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.amqp.core.Queue;
+
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -19,6 +21,11 @@ import org.springframework.context.annotation.Configuration;
         matchIfMissing = true
 )
 public class MessagingConfig {
+
+    @Bean
+    public Queue loanEventsQueue() {
+        return new Queue("loan.events", true);
+    }
 
     @Bean
     public TopicExchange loanEventsExchange() {
