@@ -9,7 +9,7 @@
     { "key": "userToken",   "value": "", "type": "string" },
     { "key": "staffToken",  "value": "", "type": "string" },
     { "key": "userId",      "value": "", "type": "string" },
-    { "key": "bookId",      "value": "1",  "type": "string" },
+    { "key": "bookId",      "value": "",  "type": "string" },
     { "key": "loanId",      "value": "", "type": "string" },
     { "key": "copyId",      "value": "", "type": "string" }
   ],
@@ -92,6 +92,38 @@
             "});",
             "pm.collectionVariables.set('userId', String(body.id));",
             "console.log('Captured userId:', body.id);"
+          ]}}]
+        },
+        {
+          "name": "Create book title for loan tests (STAFF)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api","books","addTitle"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",         "value": "Loan-Test Book",                    "type": "text" },
+                { "key": "description",   "value": "A book used for loan e2e tests.",   "type": "text" },
+                { "key": "author",        "value": "Test Author",                        "type": "text" },
+                { "key": "genre",         "value": "NONFICTION",                         "type": "text" },
+                { "key": "language",      "value": "ENGLISH",                            "type": "text" },
+                { "key": "yearPublished", "value": "2020",                               "type": "text" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Book title ready (201 or 409)', function () {",
+            "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+            "});",
+            "const body = pm.response.json();",
+            "if (pm.response.code === 201) {",
+            "    pm.collectionVariables.set('bookId', String(body.id));",
+            "    console.log('Created book title, id:', body.id);",
+            "} else if (body.existingId) {",
+            "    pm.collectionVariables.set('bookId', String(body.existingId));",
+            "    console.log('Book title already exists, id:', body.existingId);",
+            "}"
           ]}}]
         }
       ]
