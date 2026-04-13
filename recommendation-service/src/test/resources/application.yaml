@@ -5,3 +5,14 @@ spring:
 eureka:
   client:
     enabled: false
+
+loan:
+  events:
+    exchange: loan.events
+    queue: recommendation.loan.borrowed
+    borrowed-routing-key: loan.borrowed
+book:
+  events:
+    exchange: book.events
+    queue: recommendation.book.added
+    added-routing-key: book.added
