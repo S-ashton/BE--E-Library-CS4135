@@ -260,8 +260,6 @@ services:
     networks:
       - internal
       - data
-    ports:
-      - "8083:8083"
 
   embedding-service:
     build: ./embedding-service
@@ -311,8 +309,6 @@ services:
     networks:
       - internal
       - data
-    ports:
-      - "8084:8084"
 
 # NETWORKS
 # public: Only the API gateway
