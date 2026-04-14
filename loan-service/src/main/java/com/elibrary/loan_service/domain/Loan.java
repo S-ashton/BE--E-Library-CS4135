@@ -39,6 +39,9 @@ public class Loan {
     @Column(nullable = false)
     private BigDecimal fineAmount;
 
+    @Column
+    private String userEmail;
+
     public Loan() {
         this.fineAmount = BigDecimal.ZERO;
     }
@@ -52,6 +55,18 @@ public class Loan {
         this.dueDate = dueDate;
         this.status = status;
         this.fineAmount = BigDecimal.ZERO;
+    }
+
+    public Loan(Long userId, Long bookId, Long copyId,
+                LocalDateTime borrowDate, LocalDateTime dueDate, LoanStatus status, String userEmail) {
+        this.userId = userId;
+        this.bookId = bookId;
+        this.copyId = copyId;
+        this.borrowDate = borrowDate;
+        this.dueDate = dueDate;
+        this.status = status;
+        this.fineAmount = BigDecimal.ZERO;
+        this.userEmail = userEmail;
     }
 
     public void markReturned(LocalDateTime returnedAt, BigDecimal fineAmount) {
@@ -104,5 +119,13 @@ public class Loan {
 
     public BigDecimal getFineAmount() {
         return fineAmount;
+    }
+
+    public String getUserEmail() {
+        return userEmail;
+    }
+
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
     }
 }

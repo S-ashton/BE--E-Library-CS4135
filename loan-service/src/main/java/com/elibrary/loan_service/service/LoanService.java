@@ -2,11 +2,13 @@ package com.elibrary.loan_service.service;
 
 import com.elibrary.loan_service.client.BookCopyResponseDTO;
 import com.elibrary.loan_service.client.BookServiceClient;
+import com.elibrary.loan_service.client.BookTitleDTO;
 import com.elibrary.loan_service.domain.Loan;
 import com.elibrary.loan_service.domain.LoanStatus;
 import com.elibrary.loan_service.domain.NotificationStatus;
 import com.elibrary.loan_service.domain.NotificationTask;
 import com.elibrary.loan_service.domain.NotificationType;
+import com.elibrary.loan_service.dto.ActiveLoanDTO;
 import com.elibrary.loan_service.dto.BorrowRequestDTO;
 import com.elibrary.loan_service.dto.LoanDTO;
 import com.elibrary.loan_service.exception.DuplicateActiveLoanException;
@@ -28,6 +30,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -101,7 +104,8 @@ public class LoanService {
                 copyId,
                 now,
                 dueDate,
-                LoanStatus.ACTIVE
+                LoanStatus.ACTIVE,
+                request.getEmail()
         );
 
         Loan savedLoan = loanRepository.save(loan);
@@ -193,6 +197,28 @@ public class LoanService {
         return loanRepository.findByUserIdOrderByBorrowDateDesc(userId)
                 .stream()
                 .map(loanMapper::toDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ActiveLoanDTO> getAllActiveLoans() {
+        List<Loan> loans = loanRepository.findByStatusInOrderByBorrowDateDesc(
+                List.of(LoanStatus.ACTIVE, LoanStatus.OVERDUE));
+
+        List<Long> bookIds = loans.stream().map(Loan::getBookId).distinct().toList();
+        Map<Long, String> titleById = bookServiceClient.getTitlesByIds(bookIds).stream()
+                .collect(java.util.stream.Collectors.toMap(BookTitleDTO::getId, BookTitleDTO::getTitle));
+
+        return loans.stream()
+                .map(loan -> new ActiveLoanDTO(
+                        loan.getId(),
+                        loan.getUserEmail(),
+                        titleById.getOrDefault(loan.getBookId(), "Unknown"),
+                        loan.getBookId(),
+                        loan.getDueDate(),
+                        loan.getStatus(),
+                        loan.getFineAmount()
+                ))
                 .toList();
     }
 

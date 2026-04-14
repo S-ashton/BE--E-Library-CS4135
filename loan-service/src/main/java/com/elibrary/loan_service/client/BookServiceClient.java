@@ -6,12 +6,17 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class BookServiceClient {
@@ -154,5 +159,34 @@ public class BookServiceClient {
                 copyId, status, t.getMessage());
         throw new BookServiceUnavailableException(
                 "Book service is currently unavailable. Could not update book copy status.", t);
+    }
+
+    public List<BookTitleDTO> getTitlesByIds(List<Long> bookIds) {
+        if (bookIds == null || bookIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String ids = bookIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+        String url = bookServiceBaseUrl + "/api/books/titlesByIds?bookIds=" + ids;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Authenticated-User", "loan-service");
+        headers.set("X-Authenticated-Role", "STAFF");
+        headers.set("X-Authenticated-User-Id", "0");
+
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+        try {
+            ResponseEntity<List<BookTitleDTO>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    requestEntity,
+                    new ParameterizedTypeReference<>() {}
+            );
+            return response.getBody() != null ? response.getBody() : Collections.emptyList();
+        } catch (RestClientException ex) {
+            log.warn("Book service request failed while fetching titles by ids: {}", ex.getMessage());
+            return Collections.emptyList();
+        }
     }
 }
