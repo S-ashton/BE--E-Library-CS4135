@@ -227,6 +227,7 @@ public class BookService {
         SearchRequest request = SearchRequest.of(r -> r
                 .index("books")
                 .query(capturedFinal)
+                .size(10000)
         );
 
         SearchResponse<Book> results = esClient.search(request, Book.class);
@@ -280,5 +281,44 @@ public class BookService {
         return copyRepository.findByBookId(bookId)
                 .map(List::size)
                 .orElse(0);
+    }
+
+    @Transactional
+    public TitleResponseDTO updateTitle(Long id, TitleRequestDTO request) {
+        Book book = bookRepository.findById(id)
+                .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists"));
+
+        if (request.getCoverImage() != null && !request.getCoverImage().isEmpty()) {
+            String newCoverUrl;
+            try {
+                newCoverUrl = minioService.uploadCoverImage(request.getCoverImage());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to upload cover image", e);
+            }
+            book.setCoverImageUrl(newCoverUrl);
+        }
+
+        book.setTitle(request.getTitle());
+        book.setAuthor(request.getAuthor());
+        book.setDescription(request.getDescription());
+        book.setYearPublished(request.getYearPublished());
+        book.setGenre(request.getGenre());
+        book.setLanguage(request.getLanguage());
+
+        bookRepository.save(book);
+        esRepository.save(book);
+
+        return book.toDto();
+    }
+
+    @Transactional
+    public void deleteTitle(Long id) {
+        Book book = bookRepository.findById(id)
+                .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists"));
+
+        copyRepository.findByBookId(id).ifPresent(copyRepository::deleteAll);
+
+        bookRepository.delete(book);
+        esRepository.deleteById(id);
     }
 }

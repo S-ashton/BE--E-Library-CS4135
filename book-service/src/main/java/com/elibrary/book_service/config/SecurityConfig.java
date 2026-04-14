@@ -36,6 +36,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/books/**").hasAnyRole("USER", "STAFF", "ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/books/**").hasAnyRole("STAFF", "ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/books/**").hasAnyRole("STAFF", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/books/**").hasAnyRole("STAFF", "ADMIN")
                 .anyRequest().denyAll()
             )
             .addFilterBefore(gatewayIdentityAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

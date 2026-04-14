@@ -187,4 +187,47 @@ public class BookController {
         Integer response = bookService.countCopies(bookId, status);
         return ResponseEntity.ok(response);
     }
+
+    @Operation(
+            summary = "Update a title in the catalogue",
+            description = "Updates the details of an existing title by ID. If a new cover image is provided it replaces the existing one; otherwise the existing cover is retained."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Title updated successfully",
+                    content = @Content(schema = @Schema(implementation = TitleResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid user identity", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Title not found", content = @Content)
+    })
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<TitleResponseDTO> updateTitle(
+            @PathVariable("id") Long id,
+            @Valid @ModelAttribute TitleRequestDTO request,
+            @Parameter(description = "Trusted identity header forwarded by gateway")
+            @RequestHeader("X-Authenticated-User-Id") Long userId
+    ) {
+        TitleResponseDTO response = bookService.updateTitle(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "Delete a title from the catalogue",
+            description = "Deletes a title and all its copies by ID"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Title deleted successfully", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid user identity", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Title not found", content = @Content)
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTitle(
+            @PathVariable("id") Long id,
+            @Parameter(description = "Trusted identity header forwarded by gateway")
+            @RequestHeader("X-Authenticated-User-Id") Long userId
+    ) {
+        bookService.deleteTitle(id);
+        return ResponseEntity.noContent().build();
+    }
 }
