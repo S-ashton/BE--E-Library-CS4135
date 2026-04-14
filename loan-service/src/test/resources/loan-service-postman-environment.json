@@ -1,0 +1,44 @@
+{
+  "id": "13e696ee-cd54-4078-a916-fe594b843d35",
+  "name": "E-Library Loan Service Local",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "enabled": true
+    },
+    {
+      "key": "token",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "userId",
+      "value": "1",
+      "enabled": true
+    },
+    {
+      "key": "bookId",
+      "value": "1",
+      "enabled": true
+    },
+    {
+      "key": "email",
+      "value": "test@example.com",
+      "enabled": true
+    },
+    {
+      "key": "loanId",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "missingLoanId",
+      "value": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2026-04-13T00:00:00.000Z",
+  "_postman_exported_using": "ChatGPT"
+}

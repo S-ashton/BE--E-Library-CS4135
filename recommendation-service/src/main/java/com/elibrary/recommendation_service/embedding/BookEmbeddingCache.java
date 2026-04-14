@@ -4,6 +4,7 @@ import com.elibrary.recommendation_service.model.Book;
 import com.elibrary.recommendation_service.storage.FileStorageService;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.util.*;
 
 @Service
@@ -41,8 +42,15 @@ public class BookEmbeddingCache {
         return cache.get(book.getId());
     }
 
+    public void clearCache() {
+        cache = new HashMap<>();
+        File file = new File("data/book_embeddings.json");
+        if (file.exists()) file.delete();
+    }
+
     public void addOrUpdateBook(Book book) {
         float[] emb = embeddingClient.embed(book.getDescription());
+        if (emb == null) return;
         cache.put(book.getId(), emb);
         saveCache();
     }

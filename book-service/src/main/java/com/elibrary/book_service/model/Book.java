@@ -127,29 +127,37 @@ public class Book {
         return coverImageUrl;
     }
 
-    public void setCoverImageUrl(String coverImageUrl){
+    public void setCoverImageUrl(String coverImageUrl) {
         this.coverImageUrl = coverImageUrl;
     }
 
-    public Languages getLanguage(){
+    public Languages getLanguage() {
         return language;
     }
 
-    public void setLanguage(Languages language){
+    public void setLanguage(Languages language) {
         this.language = language;
     }
 
-    public int getCopiesAvailable(){
+    public int getCopiesAvailable() {
         return copiesAvailable;
     }
 
-    public void setCopiesAvailable(int numCopies){
+    public void setCopiesAvailable(int numCopies) {
         this.copiesAvailable = numCopies;
     }
 
-    public TitleResponseDTO toDto (){
-        return new TitleResponseDTO(this.id, this.title, this.author, this.description,
-                                    this.yearPublished, this.genre, this.coverImageUrl, 
-                                    this.language, this.copiesAvailable);
+    public TitleResponseDTO toDto() {
+        return new TitleResponseDTO(
+                this.id,
+                this.title,
+                this.author,
+                this.description,
+                this.yearPublished,
+                this.genre,
+                this.coverImageUrl,
+                this.language,
+                this.copiesAvailable
+        );
     }
 }

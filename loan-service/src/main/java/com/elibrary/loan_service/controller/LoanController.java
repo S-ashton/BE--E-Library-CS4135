@@ -1,5 +1,6 @@
 package com.elibrary.loan_service.controller;
 
+import com.elibrary.loan_service.dto.ActiveLoanDTO;
 import com.elibrary.loan_service.dto.BorrowRequestDTO;
 import com.elibrary.loan_service.dto.LoanDTO;
 import com.elibrary.loan_service.service.LoanService;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.elibrary.loan_service.exception.UnauthenticatedRequestException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -87,6 +89,28 @@ public class LoanController {
             @RequestHeader("X-Authenticated-User-Id") Long userId
     ) {
         List<LoanDTO> response = loanService.getLoanHistory(userId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "Get all active loans",
+            description = "Returns all currently active loans across all users. Restricted to STAFF and ADMIN roles."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Active loans returned successfully",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = LoanDTO.class)))),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid user identity", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
+    })
+    @GetMapping("/active")
+    public ResponseEntity<List<ActiveLoanDTO>> getAllActiveLoans(
+            @Parameter(description = "Trusted identity header forwarded by gateway")
+            @RequestHeader("X-Authenticated-Role") String role
+    ) {
+        if (!"STAFF".equalsIgnoreCase(role) && !"ADMIN".equalsIgnoreCase(role)) {
+            throw new UnauthenticatedRequestException("Insufficient permissions");
+        }
+        List<ActiveLoanDTO> response = loanService.getAllActiveLoans();
         return ResponseEntity.ok(response);
     }
 }

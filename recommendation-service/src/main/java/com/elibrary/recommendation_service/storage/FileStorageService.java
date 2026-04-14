@@ -27,7 +27,7 @@ public class FileStorageService {
     public <T> T load(String filename, Class<T> type) {
         File file = new File(filename);
 
-        if (!file.exists()) {
+        if (!file.exists() || file.length() == 0) {
             return null;
         }
 

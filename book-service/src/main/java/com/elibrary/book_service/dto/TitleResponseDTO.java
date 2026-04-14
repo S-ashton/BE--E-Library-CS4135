@@ -44,7 +44,17 @@ public class TitleResponseDTO {
 
     public TitleResponseDTO() {}
 
-    public TitleResponseDTO(Long id, String title, String author, String description, int yearPublished, Genre genre, String coverImageUrl, Languages language, int copiesAvailable) {
+    public TitleResponseDTO(
+            Long id,
+            String title,
+            String author,
+            String description,
+            int yearPublished,
+            Genre genre,
+            String coverImageUrl,
+            Languages language,
+            int copiesAvailable
+    ) {
         this.id = id;
         this.title = title;
         this.author = author;
@@ -56,7 +66,16 @@ public class TitleResponseDTO {
         this.copiesAvailable = copiesAvailable;
     }
 
-    public TitleResponseDTO(Long id, String title, String author, String description, int yearPublished, Genre genre, String coverImageUrl, Languages language) {
+    public TitleResponseDTO(
+            Long id,
+            String title,
+            String author,
+            String description,
+            int yearPublished,
+            Genre genre,
+            String coverImageUrl,
+            Languages language
+    ) {
         this.id = id;
         this.title = title;
         this.author = author;
@@ -100,39 +119,43 @@ public class TitleResponseDTO {
         this.description = description;
     }
 
-    public int getYearPublished(){
+    public int getYearPublished() {
         return yearPublished;
     }
 
-    public void setYearPublished(int yearPublished){
-        this.yearPublished = yearPublished;        
+    public void setYearPublished(int yearPublished) {
+        this.yearPublished = yearPublished;
     }
 
-    public Genre getGenre(){
+    public Genre getGenre() {
         return genre;
     }
 
-    public void setGenre(Genre genre){
+    public void setGenre(Genre genre) {
         this.genre = genre;
     }
 
-    public String getCoverImageUrl(){
+    public String getCoverImageUrl() {
         return coverImageUrl;
     }
 
-    public void setCoverImageUrl(String coverImageUrl){
+    public void setCoverImageUrl(String coverImageUrl) {
         this.coverImageUrl = coverImageUrl;
     }
 
-    public Languages getLanguage(){
+    public Languages getLanguage() {
         return language;
     }
 
-    public void setLanguage(Languages language){
+    public void setLanguage(Languages language) {
         this.language = language;
     }
 
-    public int getCopiesAvailable(){
+    public int getCopiesAvailable() {
         return copiesAvailable;
+    }
+
+    public void setCopiesAvailable(int copiesAvailable) {
+        this.copiesAvailable = copiesAvailable;
     }
 }

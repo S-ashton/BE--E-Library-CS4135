@@ -1,5 +1,6 @@
 package com.elibrary.recommendation_service.api;
 
+import com.elibrary.recommendation_service.embedding.BookEmbeddingCache;
 import com.elibrary.recommendation_service.model.Book;
 import com.elibrary.recommendation_service.model.LoanRecord;
 import com.elibrary.recommendation_service.service.BookUpdateService;
@@ -16,13 +17,15 @@ class UpdateControllerTest {
 
     private FileStorageService storage;
     private BookUpdateService bookUpdateService;
+    private BookEmbeddingCache embeddingCache;
     private UpdateController controller;
 
     @BeforeEach
     void setup() {
         storage = mock(FileStorageService.class);
         bookUpdateService = mock(BookUpdateService.class);
-        controller = new UpdateController(storage, bookUpdateService);
+        embeddingCache = mock(BookEmbeddingCache.class);
+        controller = new UpdateController(storage, bookUpdateService, embeddingCache);
     }
 
     @Test

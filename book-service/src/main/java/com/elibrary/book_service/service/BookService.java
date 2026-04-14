@@ -12,7 +12,6 @@ import com.elibrary.book_service.exceptions.*;
 import com.elibrary.book_service.messaging.*;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -40,7 +39,14 @@ public class BookService {
     private final BookEventPublisher bookEventPublisher;
     private final MinioService minioService;
 
-    public BookService(TitleRepository bookRepository, CopyRepository copyRepository, ElasticsearchRepo esRepository, ElasticsearchClient esClient, BookEventPublisher bookEventPublisher, MinioService minioService){
+    public BookService(
+            TitleRepository bookRepository,
+            CopyRepository copyRepository,
+            ElasticsearchRepo esRepository,
+            ElasticsearchClient esClient,
+            BookEventPublisher bookEventPublisher,
+            MinioService minioService
+    ) {
         this.bookRepository = bookRepository;
         this.copyRepository = copyRepository;
         this.esRepository = esRepository;
@@ -50,7 +56,7 @@ public class BookService {
     }
 
     @Transactional
-    public TitleResponseDTO addTitle(TitleRequestDTO title){
+    public TitleResponseDTO addTitle(TitleRequestDTO title) {
         bookRepository.findByTitleAndAuthorAndYearPublishedAndLanguage(
             title.getTitle(),
             title.getAuthor(),
@@ -58,8 +64,8 @@ public class BookService {
             title.getLanguage()
         ).ifPresent(existing -> {
             throw new TitleAlreadyExistsException(
-                "This title already exists in the system, please add another copy instead",
-                existing.getId()
+                    "This title already exists in the system, please add another copy instead",
+                    existing.getId()
             );
         });
 
@@ -70,13 +76,15 @@ public class BookService {
             throw new RuntimeException("Failed to upload cover image", e);
         }
 
-        Book newTitle = new Book(title.getTitle(),
-            title.getAuthor(), 
-            title.getDescription(),
-            title.getYearPublished(), 
-            title.getGenre(),
-            coverImageUrl,
-            title.getLanguage());
+        Book newTitle = new Book(
+                title.getTitle(),
+                title.getAuthor(),
+                title.getDescription(),
+                title.getYearPublished(),
+                title.getGenre(),
+                coverImageUrl,
+                title.getLanguage()
+        );
 
         bookRepository.save(newTitle);
         esRepository.save(newTitle);
@@ -85,163 +93,161 @@ public class BookService {
 
         try {
             BookAddedEvent event = new BookAddedEvent(
-                newTitle.getId(),
-                newTitle.getTitle(),
-                newTitle.getAuthor(), 
-                newTitle.getDescription(),
-                newTitle.getYearPublished(), 
-                newTitle.getGenre(),
-                newTitle.getCoverImageUrl(),
-                newTitle.getLanguage(),
-                1
+                    newTitle.getId(),
+                    newTitle.getTitle(),
+                    newTitle.getAuthor(),
+                    newTitle.getDescription(),
+                    newTitle.getYearPublished(),
+                    newTitle.getGenre(),
+                    newTitle.getCoverImageUrl(),
+                    newTitle.getLanguage(),
+                    1
             );
             bookEventPublisher.publishBookAdded(event);
         } catch (Exception ex) {
-            log.warn("loan.borrowed publish failed for loanId={}", newTitle.getId(), ex);
+            log.warn("book.added publish failed for bookId={}", newTitle.getId(), ex);
         }
 
         return newTitle.toDto();
     }
 
     @Transactional
-    public CopyResponseDTO addCopy(Long bookId){
+    public CopyResponseDTO addCopy(Long bookId) {
         Book book = bookRepository.findById(bookId)
-            .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists"));
+                .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists"));
 
         BookCopy newCopy = new BookCopy(bookId, Status.AVAILABLE);
+        BookCopy savedCopy = copyRepository.save(newCopy);
 
-        copyRepository.save(newCopy);
+        int availableCount = copyRepository.findByBookIdAndStatus(bookId, Status.AVAILABLE)
+                .map(List::size)
+                .orElse(0);
 
-        List<BookCopy> availableCopies = copyRepository.findByBookIdAndStatus(bookId, Status.AVAILABLE)
-            .orElseThrow(() -> new CopyNotFoundException("No available copies of this title exist"));;
-        book.setCopiesAvailable(availableCopies.size());
+        book.setCopiesAvailable(availableCount);
         bookRepository.save(book);
         esRepository.save(book);
 
-        return newCopy.toDto();
+        return savedCopy.toDto();
     }
 
     @Transactional
-    public CopyResponseDTO changeStatus(Long copyId, Status status){
+    public CopyResponseDTO changeStatus(Long copyId, Status status) {
         BookCopy currentCopy = copyRepository.findById(copyId)
-            .orElseThrow(() -> new CopyNotFoundException("No copy with this ID exists")
-        );
+                .orElseThrow(() -> new CopyNotFoundException("No copy with this ID exists"));
 
-        if(currentCopy.getStatus().equals(status)){
+        if (currentCopy.getStatus().equals(status)) {
             throw new StatusMatchingException("This copy already has this status");
-        }else{
-            currentCopy.setStatus(status);
-            currentCopy = copyRepository.save(currentCopy);
-
-            List<BookCopy> availableCopies = copyRepository.findByBookIdAndStatus(currentCopy.getBookId(), Status.AVAILABLE)
-                .orElseThrow(() -> new CopyNotFoundException("No available copies of this title exist"));;
-            Book book = bookRepository.findById(currentCopy.getBookId()).get();
-            book.setCopiesAvailable(availableCopies.size());
-            bookRepository.save(book);
-            esRepository.save(book);
-
         }
 
-        return currentCopy.toDto();
+        currentCopy.setStatus(status);
+        currentCopy = copyRepository.save(currentCopy);
 
+        int availableCount = copyRepository.findByBookIdAndStatus(currentCopy.getBookId(), Status.AVAILABLE)
+                .map(List::size)
+                .orElse(0);
+
+        Book book = bookRepository.findById(currentCopy.getBookId())
+                .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists"));
+
+        book.setCopiesAvailable(availableCount);
+        bookRepository.save(book);
+        esRepository.save(book);
+
+        return currentCopy.toDto();
     }
 
     @Transactional
-    public TitleResponseDTO getTitle(Long titleId){
+    public TitleResponseDTO getTitle(Long titleId) {
         Book title = bookRepository.findById(titleId)
-            .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists")
-        );
+                .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists"));
 
         return title.toDto();
-
     }
 
     @Transactional
     public List<TitleResponseDTO> search(String keyword, Genre genre, Integer year, Languages language) throws IOException {
 
-        // Build filter clauses
         List<Query> filters = new ArrayList<>();
 
         if (genre != null) {
             filters.add(Query.of(q -> q
-                .term(t -> t
-                    .field("genre")
-                    .value(genre.name())
-                )
+                    .term(t -> t
+                            .field("genre")
+                            .value(genre.name())
+                    )
             ));
         }
 
         if (language != null) {
             filters.add(Query.of(q -> q
-                .term(t -> t
-                    .field("language")
-                    .value(language.name())
-                )
+                    .term(t -> t
+                            .field("language")
+                            .value(language.name())
+                    )
             ));
         }
 
         if (year != null && year != 0) {
             filters.add(Query.of(q -> q
-                .term(t -> t
-                    .field("yearPublished")
-                    .value(year)
-                )
+                    .term(t -> t
+                            .field("yearPublished")
+                            .value(year)
+                    )
             ));
         }
 
         Query mainQuery;
         if (keyword != null && !keyword.isBlank()) {
             mainQuery = Query.of(q -> q
-                .multiMatch(mm -> mm
-                    .query(keyword)
-                    .fields("title^3", "author^2", "description^1")
-                    .type(TextQueryType.BestFields)
-                    .fuzziness("AUTO")
-                )
+                    .multiMatch(mm -> mm
+                            .query(keyword)
+                            .fields("title^3", "author^2", "description^1")
+                            .type(TextQueryType.BestFields)
+                            .fuzziness("AUTO")
+                    )
             );
         } else {
             mainQuery = Query.of(q -> q.matchAll(m -> m));
         }
 
-        // Combine into a bool query
         Query finalQuery;
         if (filters.isEmpty()) {
             finalQuery = mainQuery;
         } else {
             Query capturedMain = mainQuery;
             finalQuery = Query.of(q -> q
-                .bool(b -> b
-                    .must(capturedMain)
-                    .filter(filters)
-                )
+                    .bool(b -> b
+                            .must(capturedMain)
+                            .filter(filters)
+                    )
             );
         }
 
         Query capturedFinal = finalQuery;
         SearchRequest request = SearchRequest.of(r -> r
-            .index("books")
-            .query(capturedFinal)
+                .index("books")
+                .query(capturedFinal)
+                .size(10000)
         );
 
         SearchResponse<Book> results = esClient.search(request, Book.class);
 
-        List<TitleResponseDTO> books = results.hits()
-                          .hits()
-                          .stream()
-                          .map(Hit::source)
-                          .filter(Objects::nonNull)
-                          .map(Book::toDto)
-                          .collect(Collectors.toList());
-
-        return books;
+        return results.hits()
+                .hits()
+                .stream()
+                .map(Hit::source)
+                .filter(Objects::nonNull)
+                .map(Book::toDto)
+                .collect(Collectors.toList());
     }
 
     @Transactional
-    public List<TitleResponseDTO> titlesByIds(List<Long> bookIds){
+    public List<TitleResponseDTO> titlesByIds(List<Long> bookIds) {
         List<TitleResponseDTO> books = new ArrayList<>();
-        for (Long num : bookIds) {      //TODO: Add exception for non-existent title/id
+
+        for (Long num : bookIds) {
             Book book = bookRepository.findById(num)
-                .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists"));
+                    .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists"));
             books.add(book.toDto());
         }
         return books;
@@ -249,8 +255,12 @@ public class BookService {
 
     @Transactional
     public CopyResponseDTO getAvailableCopy(Long bookId) throws IOException {
+        bookRepository.findById(bookId)
+                .orElseThrow(() -> new CopyNotFoundException("There are no available copies of this title"));
+
         List<BookCopy> availableCopies = copyRepository.findByBookIdAndStatus(bookId, Status.AVAILABLE)
-            .orElse(java.util.Collections.emptyList());
+                .orElse(java.util.Collections.emptyList());
+
         if (availableCopies.isEmpty()) {
             throw new CopyNotFoundException("There are no available copies of this title");
         }
@@ -258,19 +268,57 @@ public class BookService {
     }
 
     @Transactional
-    public Integer countCopies(Long bookId, Status status){
-        int countCopies;
+    public Integer countCopies(Long bookId, Status status) {
+        bookRepository.findById(bookId)
+                .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists"));
 
-        if(status!=null){
-            List<BookCopy> copies = copyRepository.findByBookIdAndStatus(bookId, status)
-                .orElseThrow(() -> new CopyNotFoundException("No copies of this title with this status exist"));
-            countCopies = copies.size();
-        }else{
-            List<BookCopy> copies = copyRepository.findByBookId(bookId)
-                .orElseThrow(() -> new CopyNotFoundException("There are no copies of this title"));
-            countCopies = copies.size();
+        if (status != null) {
+            return copyRepository.findByBookIdAndStatus(bookId, status)
+                    .map(List::size)
+                    .orElse(0);
         }
 
-        return countCopies;
+        return copyRepository.findByBookId(bookId)
+                .map(List::size)
+                .orElse(0);
+    }
+
+    @Transactional
+    public TitleResponseDTO updateTitle(Long id, TitleRequestDTO request) {
+        Book book = bookRepository.findById(id)
+                .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists"));
+
+        if (request.getCoverImage() != null && !request.getCoverImage().isEmpty()) {
+            String newCoverUrl;
+            try {
+                newCoverUrl = minioService.uploadCoverImage(request.getCoverImage());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to upload cover image", e);
+            }
+            book.setCoverImageUrl(newCoverUrl);
+        }
+
+        book.setTitle(request.getTitle());
+        book.setAuthor(request.getAuthor());
+        book.setDescription(request.getDescription());
+        book.setYearPublished(request.getYearPublished());
+        book.setGenre(request.getGenre());
+        book.setLanguage(request.getLanguage());
+
+        bookRepository.save(book);
+        esRepository.save(book);
+
+        return book.toDto();
+    }
+
+    @Transactional
+    public void deleteTitle(Long id) {
+        Book book = bookRepository.findById(id)
+                .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists"));
+
+        copyRepository.findByBookId(id).ifPresent(copyRepository::deleteAll);
+
+        bookRepository.delete(book);
+        esRepository.deleteById(id);
     }
 }

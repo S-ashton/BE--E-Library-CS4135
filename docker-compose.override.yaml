@@ -29,6 +29,14 @@ services:
     ports:
       - "15672:15672" # RabbitMQ management UI
 
+  loan-service:
+    ports:
+      - "8083:8083"
+
+  recommendation-service:
+    ports:
+      - "8084:8084"
+
   postgres:
     ports:
       - "5432:5432"   # PostgreSQL for local inspection and development
