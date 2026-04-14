@@ -2,6 +2,7 @@ package com.elibrary.recommendation_service.api;
 
 import com.elibrary.recommendation_service.model.Book;
 import com.elibrary.recommendation_service.model.LoanRecord;
+import com.elibrary.recommendation_service.embedding.BookEmbeddingCache;
 import com.elibrary.recommendation_service.service.BookUpdateService;
 import com.elibrary.recommendation_service.storage.FileStorageService;
 import org.springframework.web.bind.annotation.*;
@@ -25,11 +26,14 @@ public class UpdateController {
 
     private final FileStorageService storage;
     private final BookUpdateService bookUpdateService;
+    private final BookEmbeddingCache embeddingCache;
 
     public UpdateController(FileStorageService storage,
-                            BookUpdateService bookUpdateService) {
+                            BookUpdateService bookUpdateService,
+                            BookEmbeddingCache embeddingCache) {
         this.storage = storage;
         this.bookUpdateService = bookUpdateService;
+        this.embeddingCache = embeddingCache;
     }
 
     @Operation(
@@ -79,6 +83,11 @@ public class UpdateController {
         }
 
         storage.save("data/loans.json", loans);
+    }
+
+    @PostMapping("/embeddings/clear")
+    public void clearEmbeddingCache() {
+        embeddingCache.clearCache();
     }
 }
 

@@ -1,3 +1,19 @@
+﻿# =============================================================================
+# E-Library Circuit Breaker Integration Tests
+# =============================================================================
+# End-to-end tests validating Resilience4j circuit breaker behaviour across
+# the microservice stack. Covers tripping, recovery, graceful degradation,
+# and gateway fallback scenarios.
+#
+# Prerequisites: all services running via docker compose
+# =============================================================================
+
+# =============================================================================
+# Helper Functions
+# =============================================================================
+# Coloured output helpers for consistent test reporting, and a utility to
+# query circuit breaker state from a service's Actuator endpoint.
+
 $ErrorActionPreference = "SilentlyContinue"
 
 function Write-Header($text) {
@@ -15,17 +31,76 @@ function Get-CBState($port, $name) {
     return $r.circuitBreakers.$name
 }
 
-# SETUP
-Write-Header "SETUP: Get auth token"
-$loginBody = '{"email":"e2e-user@elibrary.ie","password":"Test@12345"}'
+# =============================================================================
+# Setup: Authentication & Circuit Breaker Warm-Up
+# =============================================================================
+# Register (or reuse) a dedicated test user, acquire a JWT token, then send
+# successful requests through each circuit breaker to ensure they start in the
+# CLOSED state. Prior postman runs may have left breakers in HALF_OPEN; the
+# warm-up transitions them back to CLOSED before the tests begin.
+
+Write-Header "SETUP: Register & authenticate circuit breaker test user"
+$cbEmail    = "circuitbreakertest@elibrary.ie"
+$cbPassword = "CBTest@12345"
+
+Write-Step "Registering test user ($cbEmail)..."
+$registerBody = @{ email = $cbEmail; password = $cbPassword; role = "USER" } | ConvertTo-Json
+try {
+    $regResponse = Invoke-RestMethod -Method POST http://localhost:8080/api/auth/register -ContentType "application/json" -Body $registerBody -ErrorAction Stop
+    $cbUserId = $regResponse.id
+    Write-Pass "Registered new user (id=$cbUserId)"
+} catch {
+    $regCode = [int]$_.Exception.Response.StatusCode
+    if ($regCode -eq 409) {
+        Write-Info "User already exists - reusing"
+    } else {
+        Write-Fail "Registration failed: $regCode"; exit 1
+    }
+}
+
+$loginBody = @{ email = $cbEmail; password = $cbPassword } | ConvertTo-Json
 $loginResponse = Invoke-RestMethod -Method POST http://localhost:8080/api/auth/login -ContentType "application/json" -Body $loginBody
 $token = $loginResponse.token
 if (-not $token) { Write-Fail "Could not get token."; exit 1 }
 Write-Pass "Token acquired"
-$authHeaders = @{ Authorization = "Bearer $token"; "Content-Type" = "application/json" }
-$borrowBody  = '{"bookId":1,"email":"e2e-user@elibrary.ie"}'
 
-# TEST 1 - loan-service CB trips OPEN
+# If we didn't get the ID from registration (user already existed), fetch it via /api/users/me
+if (-not $cbUserId) {
+    try {
+        $meResponse = Invoke-RestMethod "http://localhost:8080/api/users/me" -Headers @{ Authorization = "Bearer $token" } -ErrorAction Stop
+        $cbUserId = $meResponse.id
+        Write-Info "Resolved user id=$cbUserId from /api/users/me"
+    } catch {
+        Write-Fail "Could not resolve user ID"; exit 1
+    }
+}
+
+$authHeaders = @{ Authorization = "Bearer $token"; "Content-Type" = "application/json" }
+$borrowBody  = @{ bookId = 1; email = $cbEmail } | ConvertTo-Json
+
+Write-Step "Resetting circuit breakers to CLOSED (warm-up requests)..."
+# Send successful requests to transition any HALF_OPEN CBs to CLOSED
+1..5 | ForEach-Object {
+    try { Invoke-RestMethod "http://localhost:8080/api/books/search" -Headers $authHeaders -ErrorAction Stop | Out-Null } catch {}
+    try { Invoke-RestMethod "http://localhost:8084/api/recommendations?limit=1" -Headers @{ Authorization = "Bearer $token"; "X-Authenticated-User-Id" = "$cbUserId" } -ErrorAction Stop | Out-Null } catch {}
+}
+Start-Sleep -Seconds 2
+$loanCb = Get-CBState 8083 "book-service"
+$embedCb = Get-CBState 8084 "embedding-service"
+if ($loanCb.state -eq "CLOSED" -and $embedCb.state -eq "CLOSED") {
+    Write-Pass "All circuit breakers are CLOSED"
+} else {
+    Write-Info "loan-service CB: $($loanCb.state), embedding CB: $($embedCb.state) (may affect results)"
+}
+
+# =============================================================================
+# TEST 1: Circuit Breaker Trips OPEN on Downstream Failure
+# =============================================================================
+# Stop book-service and fire borrow requests through loan-service.
+# After the sliding window fills with failures (5 calls, 50% threshold),
+# the breaker should transition to OPEN and short-circuit subsequent
+# requests (notPermittedCalls > 0) without making network calls.
+
 Write-Header "TEST 1: loan-service CB - trips OPEN when book-service is down"
 $cb = Get-CBState 8083 "book-service"
 Write-Info "Initial state: $($cb.state)"
@@ -47,7 +122,14 @@ Write-Info "notPermitted   : $($cb.notPermittedCalls)"
 if ($cb.state -eq "OPEN") { Write-Pass "CB is OPEN - circuit tripped correctly" } else { Write-Fail "Expected OPEN, got $($cb.state)" }
 if ([int]$cb.notPermittedCalls -ge 1) { Write-Pass "notPermittedCalls=$($cb.notPermittedCalls) - last requests short-circuited without network call" } else { Write-Fail "Expected notPermittedCalls > 0" }
 
-# TEST 2 - loan-service CB recovery
+# =============================================================================
+# TEST 2: Circuit Breaker Recovery (OPEN -> HALF_OPEN -> CLOSED)
+# =============================================================================
+# Restart book-service and wait for the waitDurationInOpenState (30s) to
+# expire so the breaker transitions to HALF_OPEN. Then send probe requests;
+# successful probes should transition the breaker back to CLOSED, completing
+# the full recovery cycle. Also waits for Eureka discovery cache propagation.
+
 Write-Header "TEST 2: loan-service CB - HALF_OPEN to CLOSED recovery"
 Write-Step "Restarting book-service..."
 docker compose start book-service 2>&1 | Out-Null
@@ -85,24 +167,58 @@ if ($cb.state -eq "CLOSED") { Write-Pass "CB recovered to CLOSED - full OPEN->HA
 elseif ($cb.state -eq "HALF_OPEN") { Write-Pass "CB is HALF_OPEN - probes in progress, will close on next success" }
 else { Write-Fail "Expected CLOSED or HALF_OPEN after recovery, got $($cb.state)" }
 
-# TEST 3 - recommendation-service embedding CB graceful degradation
+# =============================================================================
+# TEST 3: Graceful Degradation with Embedding Service Down
+# =============================================================================
+# Seed books into recommendation-service, then SIGKILL the embedding-service
+# and clear the embedding cache. Subsequent recommendation requests should
+# fall back to popularity-based recommendations while the embedding CB
+# accumulates failures and transitions to OPEN (slidingWindow=5, threshold=60%).
+# SIGKILL is used before cache clear to prevent RabbitMQ replay from
+# repopulating the cache through the still-alive embedding-service.
+
 Write-Header "TEST 3: recommendation-service CB - graceful degradation when embedding-service is down"
 $cb = Get-CBState 8084 "embedding-service"
 Write-Info "Initial embedding CB state: $($cb.state)"
-Write-Step "Stopping embedding-service..."
-docker compose stop embedding-service 2>&1 | Out-Null
+
+Write-Step "Seeding books into recommendation-service via internal endpoint (RabbitMQ events may be missed on restart)..."
+$bookList = Invoke-RestMethod "http://localhost:8080/api/books/search" -Headers $authHeaders -ErrorAction Stop
+foreach ($b in $bookList) {
+    $body = @{ id = $b.id; title = $b.title; description = $b.description } | ConvertTo-Json
+    try { Invoke-RestMethod -Method POST "http://localhost:8084/api/recommendations/internal/books/update" -ContentType "application/json" -Body $body | Out-Null } catch {}
+}
+Write-Info "Seeded $($bookList.Count) book(s) into recommendation-service"
+
+Write-Step "Killing embedding-service (SIGKILL for immediate stop, before cache clear to prevent RabbitMQ replay repopulating cache)..."
+docker compose kill embedding-service 2>&1 | Out-Null
+Start-Sleep -Seconds 3
+Write-Step "Verifying embedding-service is unreachable..."
+try {
+    Invoke-RestMethod "http://localhost:8000/health" -TimeoutSec 2 | Out-Null
+    Write-Fail "embedding-service is still reachable - test may not be valid"
+} catch {
+    Write-Pass "embedding-service is unreachable - confirmed down"
+}
+Write-Step "Clearing in-memory embedding cache (service already dead - RabbitMQ replays will fail)..."
+Invoke-RestMethod -Method POST "http://localhost:8084/api/recommendations/internal/embeddings/clear" | Out-Null
+$cb = Get-CBState 8084 "embedding-service"
+Write-Info "CB state after clear: buffered=$($cb.bufferedCalls) failed=$($cb.failedCalls)"
 Start-Sleep -Seconds 2
 Write-Step "Calling recommendations with embedding-service down..."
-$recHeaders = @{ Authorization = "Bearer $token"; "X-Authenticated-User-Id" = "1" }
+$recHeaders = @{ Authorization = "Bearer $token"; "X-Authenticated-User-Id" = "$cbUserId" }
 try {
     $recs = Invoke-RestMethod "http://localhost:8080/api/recommendations?limit=3" -Headers $recHeaders -ErrorAction Stop
     Write-Pass "Recommendations returned $($recs.Count) result(s) - popularity fallback working"
 } catch {
     Write-Fail "Recommendations failed: $([int]$_.Exception.Response.StatusCode)"
 }
+$cb = Get-CBState 8084 "embedding-service"
+Write-Info "CB after 1st request: buffered=$($cb.bufferedCalls) failed=$($cb.failedCalls) state=$($cb.state)"
 Write-Step "Firing 6 more calls to accumulate failures..."
 1..6 | ForEach-Object {
     try { Invoke-RestMethod "http://localhost:8080/api/recommendations?limit=1" -Headers $recHeaders | Out-Null } catch {}
+    $cb2 = Get-CBState 8084 "embedding-service"
+    Write-Info "  Call $_ : buffered=$($cb2.bufferedCalls) failed=$($cb2.failedCalls) state=$($cb2.state)"
 }
 $cb = Get-CBState 8084 "embedding-service"
 Write-Info "Embedding CB state  : $($cb.state)"
@@ -110,7 +226,14 @@ Write-Info "failedCalls         : $($cb.failedCalls)"
 Write-Info "bufferedCalls       : $($cb.bufferedCalls)"
 if ($cb.state -eq "OPEN") { Write-Pass "Embedding CB is OPEN" } else { Write-Info "CB state: $($cb.state) - books may already have cached embeddings so embed() was not called" }
 
-# TEST 4 - gateway fallback
+# =============================================================================
+# TEST 4: API Gateway Fallback (503 Service Unavailable)
+# =============================================================================
+# Stop user-service and hit the gateway's /api/auth/login endpoint.
+# The gateway's circuit breaker (or direct routing failure) should return
+# a structured 503 response from the FallbackController rather than an
+# unhandled error, verifying the gateway's resilience configuration.
+
 Write-Header "TEST 4: api-gateway CB - structured 503 fallback response"
 Write-Step "Stopping user-service..."
 docker compose stop user-service 2>&1 | Out-Null
@@ -130,7 +253,13 @@ try {
     else { Write-Fail "Unexpected status: $code" }
 }
 
-# CLEANUP
+# =============================================================================
+# Cleanup: Restore Services & Return Stale Loans
+# =============================================================================
+# Restart all stopped/killed services, then return any active loans created
+# by the probe requests so the system is left in a clean state for subsequent
+# test runs or postman collections.
+
 Write-Header "CLEANUP: Restore all services"
 docker compose start book-service embedding-service user-service 2>&1 | Out-Null
 Start-Sleep -Seconds 5
@@ -153,7 +282,13 @@ try {
     Write-Info "Could not fetch loan history for cleanup"
 }
 
-# FINAL STATUS
+# =============================================================================
+# Final Status: Circuit Breaker State Summary
+# =============================================================================
+# Print the final state of all circuit breakers for manual inspection.
+# Expected: loan-service CB should be CLOSED (recovered), embedding CB
+# may be OPEN or HALF_OPEN depending on timing.
+
 Write-Header "FINAL CB STATUS"
 Write-Host "`nloan-service (book-service CB):" -ForegroundColor White
 Invoke-RestMethod http://localhost:8083/actuator/circuitbreakers | ConvertTo-Json -Depth 5
