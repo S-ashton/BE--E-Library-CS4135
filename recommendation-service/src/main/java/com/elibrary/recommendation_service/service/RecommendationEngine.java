@@ -84,13 +84,16 @@ public class RecommendationEngine {
                     float[] bookEmbedding = embeddingCache.getEmbedding(book);
 
                     if (bookEmbedding == null) {
-                        // lazy embed + cache
+                        // lazy embed + cache; may return null if embedding-service is unavailable
                         bookEmbedding = embeddingClient.embed(book.getDescription());
-                        embeddingCache.addOrUpdateBook(book);
+                        if (bookEmbedding != null) {
+                            embeddingCache.addOrUpdateBook(book);
+                        }
                     }
 
-                    double contentScore =
-                            similarityCalculator.cosineSimilarity(userEmbedding, bookEmbedding);
+                    double contentScore = bookEmbedding != null
+                            ? similarityCalculator.cosineSimilarity(userEmbedding, bookEmbedding)
+                            : 0.0;
 
                     double cfScore = cfScores.getOrDefault(book.getId(), 0.0);
 
@@ -117,9 +120,13 @@ public class RecommendationEngine {
             float[] emb = embeddingCache.getEmbedding(b);
             if (emb == null) {
                 emb = embeddingClient.embed(b.getDescription());
-                embeddingCache.addOrUpdateBook(b);
+                if (emb != null) {
+                    embeddingCache.addOrUpdateBook(b);
+                    vectors.add(emb);
+                }
+            } else {
+                vectors.add(emb);
             }
-            vectors.add(emb);
         }
 
         if (vectors.isEmpty()) return null;

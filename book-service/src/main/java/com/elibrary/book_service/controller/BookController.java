@@ -23,6 +23,7 @@ import java.util.List;
 @RequestMapping("/api/books")
 @Tag(name = "Books", description = "Endpoints for adding to, altering or requesting from the book catalogue.")
 public class BookController {
+
     private final BookService bookService;
 
     public BookController(BookService bookService) {
@@ -39,15 +40,15 @@ public class BookController {
             @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
             @ApiResponse(responseCode = "401", description = "Missing or invalid user identity", content = @Content),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)    //TODO: Clarify
+            @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)
     })
     @PostMapping(value = "/addTitle", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TitleResponseDTO> addTitle(
             @Valid @ModelAttribute TitleRequestDTO request,
             @Parameter(description = "Trusted identity header forwarded by gateway")
-            @RequestHeader("X-Authenticated-User-Id") Long userId   //TODO: CHECK FOR LIBRARIAN 
+            @RequestHeader("X-Authenticated-User-Id") Long userId
     ) {
-        TitleResponseDTO response = bookService.addTitle(request); //TODO: Update
+        TitleResponseDTO response = bookService.addTitle(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -65,7 +66,7 @@ public class BookController {
     })
     @PostMapping("/addCopy")
     public ResponseEntity<CopyResponseDTO> addCopy(
-            @Valid @RequestParam Long titleId,
+            @RequestParam Long titleId,
             @Parameter(description = "Trusted identity header forwarded by gateway")
             @RequestHeader("X-Authenticated-User-Id") Long userId
     ) {
@@ -87,10 +88,10 @@ public class BookController {
     })
     @PutMapping("/changeStatus")
     public ResponseEntity<CopyResponseDTO> changeStatus(
-            @Valid @RequestParam Long copyId,
-            @Valid @RequestParam Status status,
+            @RequestParam Long copyId,
+            @RequestParam Status status,
             @Parameter(description = "Trusted identity header forwarded by gateway")
-            @RequestHeader("X-Authenticated-User-Id") Long userId 
+            @RequestHeader("X-Authenticated-User-Id") Long userId
     ) {
         CopyResponseDTO response = bookService.changeStatus(copyId, status);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -101,16 +102,16 @@ public class BookController {
             description = "Retrieve the details of a single title"
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Title details returned successfully",
+            @ApiResponse(responseCode = "200", description = "Title details returned successfully",
                     content = @Content(schema = @Schema(implementation = TitleResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
             @ApiResponse(responseCode = "401", description = "Missing or invalid user identity", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Conflict", content = @Content) 
+            @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)
     })
     @GetMapping("/{id}")
     public ResponseEntity<TitleResponseDTO> getTitle(@PathVariable("id") Long titleId) {
         TitleResponseDTO response = bookService.getTitle(titleId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.ok(response);
     }
 
     @Operation(
@@ -122,22 +123,22 @@ public class BookController {
                     content = @Content(schema = @Schema(implementation = TitleResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
             @ApiResponse(responseCode = "401", description = "Missing or invalid user identity", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Conflict", content = @Content) 
+            @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)
     })
     @GetMapping("/search")
     public ResponseEntity<List<TitleResponseDTO>> search(
-        @RequestParam(required = false) String keyword,
-        @RequestParam(required = false) Genre genre,
-        @RequestParam(defaultValue = "0") int year,
-        @RequestParam(required = false) Languages language
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Genre genre,
+            @RequestParam(defaultValue = "0") int year,
+            @RequestParam(required = false) Languages language
     ) throws IOException {
         List<TitleResponseDTO> response = bookService.search(keyword, genre, year, language);
         return ResponseEntity.ok(response);
     }
 
     @Operation(
-        summary = "Retrieve a list of titles from ids",
-        description = "When given a list of title ids, retrieve the relevant objects from the DB and return them"
+            summary = "Retrieve a list of titles from ids",
+            description = "When given a list of title ids, retrieve the relevant objects from the DB and return them"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Title details returned successfully",
@@ -147,16 +148,14 @@ public class BookController {
             @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)
     })
     @GetMapping("/titlesByIds")
-    public ResponseEntity<List<TitleResponseDTO>> titlesFromIds(
-        @RequestParam List<Long> bookIds
-    ){
+    public ResponseEntity<List<TitleResponseDTO>> titlesFromIds(@RequestParam List<Long> bookIds) {
         List<TitleResponseDTO> response = bookService.titlesByIds(bookIds);
         return ResponseEntity.ok(response);
     }
 
     @Operation(
-        summary = "Retrieve an available copy of a title",
-        description = "Find an available copy of a title from the given title id and return its details"
+            summary = "Retrieve an available copy of a title",
+            description = "Find an available copy of a title from the given title id and return its details"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Copy details returned successfully",
@@ -165,16 +164,14 @@ public class BookController {
             @ApiResponse(responseCode = "409", description = "Conflict", content = @Content)
     })
     @GetMapping("/getAvailableCopy")
-    public ResponseEntity<CopyResponseDTO> getAvailableCopy(
-        @RequestParam Long bookId
-    ) throws IOException{
+    public ResponseEntity<CopyResponseDTO> getAvailableCopy(@RequestParam Long bookId) throws IOException {
         CopyResponseDTO response = bookService.getAvailableCopy(bookId);
         return ResponseEntity.ok(response);
     }
 
     @Operation(
-        summary = "Find how many copies have a certain status",
-        description = "Count the number of copies of a title with the given status, or the total number of copies of that title if no status is given"
+            summary = "Find how many copies have a certain status",
+            description = "Count the number of copies of a title with the given status, or the total number of copies of that title if no status is given"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Copy count returned successfully",
@@ -184,9 +181,9 @@ public class BookController {
     })
     @GetMapping("/countCopies")
     public ResponseEntity<Integer> countCopies(
-        @RequestParam Long bookId,
-        @RequestParam(required = false) Status status
-    ){
+            @RequestParam Long bookId,
+            @RequestParam(required = false) Status status
+    ) {
         Integer response = bookService.countCopies(bookId, status);
         return ResponseEntity.ok(response);
     }

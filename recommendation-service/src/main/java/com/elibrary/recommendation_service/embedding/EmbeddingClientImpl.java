@@ -1,5 +1,8 @@
 package com.elibrary.recommendation_service.embedding;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -9,6 +12,9 @@ import java.util.Map;
 
 @Component
 public class EmbeddingClientImpl implements EmbeddingClient {
+
+    private static final Logger log = LoggerFactory.getLogger(EmbeddingClientImpl.class);
+    private static final String CIRCUIT_BREAKER_NAME = "embedding-service";
 
     private final RestTemplate restTemplate;
     private final String baseUrl;
@@ -22,6 +28,7 @@ public class EmbeddingClientImpl implements EmbeddingClient {
     }
 
     @Override
+    @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "embedFallback")
     public float[] embed(String text) {
         String url = baseUrl + "/embed";
 
@@ -42,5 +49,9 @@ public class EmbeddingClientImpl implements EmbeddingClient {
 
         return embedding;
     }
-}
 
+    private float[] embedFallback(String text, Throwable t) {
+        log.warn("Circuit breaker open for embedding-service (text length={}): {}", text.length(), t.getMessage());
+        return null;
+    }
+}

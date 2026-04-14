@@ -14,21 +14,41 @@ spring:
               uri: lb://user-service
               predicates:
                 - Path=/api/auth/**,/api/users/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: user-service
+                    fallbackUri: forward:/fallback
 
             - id: book-service
               uri: lb://book-service
               predicates:
                 - Path=/api/books/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: book-service
+                    fallbackUri: forward:/fallback
 
             - id: loan-service
               uri: lb://loan-service
               predicates:
                 - Path=/api/loans/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: loan-service
+                    fallbackUri: forward:/fallback
 
             - id: recommendation-service
               uri: lb://recommendation-service
               predicates:
                 - Path=/api/recommendations/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: recommendation-service
+                    fallbackUri: forward:/fallback
 
 eureka:
   client:
