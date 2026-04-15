@@ -52,3 +52,5 @@ book:
     exchange: book.events
     queue: recommendation.book.added
     added-routing-key: book.added
+    deleted-queue: recommendation.book.deleted
+    deleted-routing-key: book.deleted

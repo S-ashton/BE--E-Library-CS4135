@@ -31,6 +31,12 @@ public class MessagingConfig {
     @Value("${book.events.added-routing-key}")
     private String bookAddedRoutingKey;
 
+    @Value("${book.events.deleted-queue}")
+    private String bookDeletedQueue;
+
+    @Value("${book.events.deleted-routing-key}")
+    private String bookDeletedRoutingKey;
+
     @Bean
     public Queue loanEventQueue() {
         return new Queue(loanQueue, true);
@@ -63,6 +69,18 @@ public class MessagingConfig {
         return BindingBuilder.bind(bookEventQueue())
                 .to(bookEventsExchange())
                 .with(bookAddedRoutingKey);
+    }
+
+    @Bean
+    public Queue bookDeletedEventQueue() {
+        return new Queue(bookDeletedQueue, true);
+    }
+
+    @Bean
+    public Binding bookDeletedEventBinding() {
+        return BindingBuilder.bind(bookDeletedEventQueue())
+                .to(bookEventsExchange())
+                .with(bookDeletedRoutingKey);
     }
 
     @Bean

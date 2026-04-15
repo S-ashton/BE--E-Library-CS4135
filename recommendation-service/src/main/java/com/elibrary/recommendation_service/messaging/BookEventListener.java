@@ -33,6 +33,13 @@ public class BookEventListener {
         bookUpdateService.updateBook(book);
     }
 
+    @RabbitListener(queues = "${book.events.deleted-queue}")
+    public void onBookDeleted(@Payload Map<String, Object> event) {
+        Long bookId = asLong(event.get("id"));
+        log.info("Received book.deleted event: bookId={}", bookId);
+        bookUpdateService.removeBook(bookId);
+    }
+
     private Long asLong(Object value) {
         if (value instanceof Number number) {
             return number.longValue();
