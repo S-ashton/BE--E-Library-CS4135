@@ -10,6 +10,7 @@ import co.elastic.clients.elasticsearch.core.SearchRequest;
 import com.elibrary.book_service.model.*;
 import com.elibrary.book_service.exceptions.*;
 import com.elibrary.book_service.messaging.*;
+import com.elibrary.book_service.client.LoanServiceClient;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ public class BookService {
     private final ElasticsearchClient esClient;
     private final BookEventPublisher bookEventPublisher;
     private final MinioService minioService;
+    private final LoanServiceClient loanServiceClient;
 
     public BookService(
             TitleRepository bookRepository,
@@ -45,7 +47,8 @@ public class BookService {
             ElasticsearchRepo esRepository,
             ElasticsearchClient esClient,
             BookEventPublisher bookEventPublisher,
-            MinioService minioService
+            MinioService minioService,
+            LoanServiceClient loanServiceClient
     ) {
         this.bookRepository = bookRepository;
         this.copyRepository = copyRepository;
@@ -53,6 +56,7 @@ public class BookService {
         this.esClient = esClient;
         this.bookEventPublisher = bookEventPublisher;
         this.minioService = minioService;
+        this.loanServiceClient = loanServiceClient;
     }
 
     @Transactional
@@ -316,9 +320,13 @@ public class BookService {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new TitleNotFoundException("No title with this ID exists"));
 
+        loanServiceClient.checkNoActiveLoans(id);
+
         copyRepository.findByBookId(id).ifPresent(copyRepository::deleteAll);
 
         bookRepository.delete(book);
         esRepository.deleteById(id);
+
+        bookEventPublisher.publishBookDeleted(new BookDeletedEvent(id));
     }
 }

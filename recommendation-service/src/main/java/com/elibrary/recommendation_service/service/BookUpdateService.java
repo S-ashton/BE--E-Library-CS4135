@@ -41,6 +41,15 @@ public class BookUpdateService {
         embeddingCache.addOrUpdateBook(book);
     }
 
+    public void removeBook(Long bookId) {
+        List<Map<String, Object>> rawBooks = storage.load(BOOKS_FILE, List.class);
+        if (rawBooks == null) return;
+
+        rawBooks.removeIf(existingBook -> sameBookId(existingBook.get("id"), bookId));
+        storage.save(BOOKS_FILE, rawBooks);
+        embeddingCache.removeBook(bookId);
+    }
+
     private boolean sameBookId(Object existingId, Long bookId) {
         if (existingId instanceof Number number) {
             return number.longValue() == bookId;

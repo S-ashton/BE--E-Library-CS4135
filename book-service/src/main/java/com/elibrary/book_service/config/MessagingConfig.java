@@ -50,6 +50,18 @@ public class MessagingConfig {
     }
 
     @Bean
+    public Queue bookDeletedFanoutQueue() {
+        return new Queue("book-service.book.deleted", true);
+    }
+
+    @Bean
+    public Binding bookDeletedFanoutBinding() {
+        return BindingBuilder.bind(bookDeletedFanoutQueue())
+                .to(bookEventsExchange())
+                .with("book.deleted");
+    }
+
+    @Bean
     public Queue loanBorrowedQueue() {
         return new Queue(borrowedQueue, true);
     }

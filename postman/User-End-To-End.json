@@ -12,7 +12,9 @@
     { "key": "userExpiresAt",   "value": "", "type": "string" },
     { "key": "adminToken",      "value": "", "type": "string" },
     { "key": "userId",          "value": "", "type": "string" },
-    { "key": "updatedEmail",    "value": "", "type": "string" }
+    { "key": "updatedEmail",    "value": "", "type": "string" },
+    { "key": "deleteEmail",     "value": "", "type": "string" },
+    { "key": "deleteUserId",    "value": "", "type": "string" }
   ],
   "item": [
 
@@ -379,6 +381,7 @@
                 "pm.test('Password NOT in update response', function () {",
                 "    pm.expect(body).to.not.have.property('password');",
                 "});",
+                "pm.collectionVariables.set('testEmail', body.email);",
                 "console.log('Updated email to:', body.email);"
               ]}
             }
@@ -715,6 +718,400 @@
             "    pm.expect(pm.response.json().role).to.equal('USER');",
             "});"
           ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "10 - Update Password (PUT /api/users/me/password)",
+      "item": [
+        {
+          "name": "Update password with correct current password (expect 204)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": { "type": "text/javascript", "exec": [
+                "// Ensure we have a fresh user token — fall back to testPassword",
+                "if (!pm.collectionVariables.get('userToken')) {",
+                "    console.warn('userToken not set — run section 3 first');",
+                "}"
+              ]}
+            },
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Update password returns 204', function () { pm.response.to.have.status(204); });",
+                "pm.collectionVariables.set('testPassword', 'NewPass@99');",
+                "console.log('Password updated to NewPass@99');"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": { "raw": "{{gatewayUrl}}/api/users/me/password", "host": ["{{gatewayUrl}}"], "path": ["api","users","me","password"] },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"currentPassword\": \"Test@12345\",\n  \"newPassword\": \"NewPass@99\"\n}" }
+          }
+        },
+        {
+          "name": "Login with new password confirms change (expect 200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Login with new password returns 200', function () { pm.response.to.have.status(200); });",
+                "pm.test('Access token returned', function () {",
+                "    pm.expect(pm.response.json()).to.have.property('token');",
+                "});",
+                "pm.collectionVariables.set('userToken', pm.response.json().token);"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/login", "host": ["{{gatewayUrl}}"], "path": ["api","auth","login"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"NewPass@99\"\n}" }
+          }
+        },
+        {
+          "name": "Update password with wrong current password (expect 422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Wrong current password returns 422', function () { pm.response.to.have.status(422); });",
+                "pm.test('Error message mentions current password', function () {",
+                "    pm.expect(pm.response.json()).to.have.property('message');",
+                "});"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": { "raw": "{{gatewayUrl}}/api/users/me/password", "host": ["{{gatewayUrl}}"], "path": ["api","users","me","password"] },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"currentPassword\": \"WrongPass!1\",\n  \"newPassword\": \"AnotherPass@1\"\n}" }
+          }
+        },
+        {
+          "name": "Update password without auth (expect 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('No auth on password update returns 401', function () { pm.response.to.have.status(401); });"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": { "raw": "{{gatewayUrl}}/api/users/me/password", "host": ["{{gatewayUrl}}"], "path": ["api","users","me","password"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"currentPassword\": \"Test@12345\",\n  \"newPassword\": \"AnotherPass@1\"\n}" }
+          }
+        },
+        {
+          "name": "Update password with weak new password (expect 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Weak new password returns 400', function () { pm.response.to.have.status(400); });",
+                "pm.test('Validation errors present', function () {",
+                "    pm.expect(pm.response.json()).to.have.property('errors').that.is.an('array');",
+                "});"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": { "raw": "{{gatewayUrl}}/api/users/me/password", "host": ["{{gatewayUrl}}"], "path": ["api","users","me","password"] },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"currentPassword\": \"NewPass@99\",\n  \"newPassword\": \"weak\"\n}" }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "11 - Update User Role (PUT /api/users/{id}/role)",
+      "item": [
+        {
+          "name": "ADMIN promotes USER to STAFF (expect 200)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": { "type": "text/javascript", "exec": [
+                "if (!pm.collectionVariables.get('adminToken')) {",
+                "    console.warn('adminToken not set — run section 7 first');",
+                "}",
+                "if (!pm.collectionVariables.get('userId')) {",
+                "    console.warn('userId not set — run section 1 first');",
+                "}"
+              ]}
+            },
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Role update returns 200', function () { pm.response.to.have.status(200); });",
+                "const body = pm.response.json();",
+                "pm.test('Role is now STAFF', function () { pm.expect(body.role).to.equal('STAFF'); });",
+                "pm.test('User id unchanged', function () {",
+                "    pm.expect(String(body.id)).to.equal(pm.collectionVariables.get('userId'));",
+                "});"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/users/{{userId}}/role",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api","users","{{userId}}","role"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"STAFF\"\n}" }
+          }
+        },
+        {
+          "name": "ADMIN resets role back to USER (expect 200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Role reset returns 200', function () { pm.response.to.have.status(200); });",
+                "pm.test('Role is USER', function () { pm.expect(pm.response.json().role).to.equal('USER'); });"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/users/{{userId}}/role",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api","users","{{userId}}","role"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"USER\"\n}" }
+          }
+        },
+        {
+          "name": "Role update with invalid role value (expect 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Invalid role returns 400', function () { pm.response.to.have.status(400); });"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/users/{{userId}}/role",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api","users","{{userId}}","role"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"SUPERUSER\"\n}" }
+          }
+        },
+        {
+          "name": "Role update by non-ADMIN (expect 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Non-ADMIN role update returns 403', function () { pm.response.to.have.status(403); });"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/users/{{userId}}/role",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api","users","{{userId}}","role"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"ADMIN\"\n}" }
+          }
+        },
+        {
+          "name": "Role update for non-existent user (expect 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Non-existent user role update returns 404', function () { pm.response.to.have.status(404); });"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/users/999999/role",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api","users","999999","role"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"STAFF\"\n}" }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "12 - Delete User (DELETE /api/users/{id})",
+      "item": [
+        {
+          "name": "Register a disposable user for deletion",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.collectionVariables.set('deleteEmail', 'delete-e2e-' + Date.now() + '@elibrary.ie');"
+              ]}
+            },
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Disposable user registered (201)', function () { pm.response.to.have.status(201); });",
+                "pm.collectionVariables.set('deleteUserId', String(pm.response.json().id));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/register", "host": ["{{gatewayUrl}}"], "path": ["api","auth","register"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{deleteEmail}}\",\n  \"password\": \"Test@12345\",\n  \"role\": \"USER\"\n}" }
+          }
+        },
+        {
+          "name": "ADMIN deletes the disposable user (expect 204)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Delete user returns 204', function () { pm.response.to.have.status(204); });"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/users/{{deleteUserId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api","users","{{deleteUserId}}"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }]
+          }
+        },
+        {
+          "name": "Deleted user no longer in list (expect absent from GET /api/users)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('List users returns 200', function () { pm.response.to.have.status(200); });",
+                "const users = pm.response.json();",
+                "const deletedId = Number(pm.collectionVariables.get('deleteUserId'));",
+                "const found = users.some(u => u.id === deletedId);",
+                "pm.test('Deleted user is absent from list', function () { pm.expect(found).to.be.false; });"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/users", "host": ["{{gatewayUrl}}"], "path": ["api","users"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }]
+          }
+        },
+        {
+          "name": "Delete same user again (expect 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Second delete returns 404', function () { pm.response.to.have.status(404); });"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/users/{{deleteUserId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api","users","{{deleteUserId}}"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }]
+          }
+        },
+        {
+          "name": "Delete user by non-ADMIN (expect 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Non-ADMIN delete returns 403', function () { pm.response.to.have.status(403); });"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/users/{{userId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api","users","{{userId}}"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          }
+        },
+        {
+          "name": "Delete user without auth (expect 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('No auth on delete returns 401', function () { pm.response.to.have.status(401); });"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/users/{{userId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api","users","{{userId}}"]
+            },
+            "header": []
+          }
         }
       ]
     }

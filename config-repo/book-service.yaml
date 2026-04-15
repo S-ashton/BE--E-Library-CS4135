@@ -51,3 +51,8 @@ book:
   events:
     exchange: book.events
     added-routing-key: book.added
+    deleted-routing-key: book.deleted
+
+services:
+  loan:
+    base-url: ${LOAN_SERVICE_BASE_URL:http://loan-service:8083}

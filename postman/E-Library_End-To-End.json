@@ -19,7 +19,10 @@
     { "key": "adminToken",      "value": "" },
     { "key": "createdTitleId",  "value": "" },
     { "key": "createdCopyId",   "value": "" },
-    { "key": "loanId",          "value": "" }
+    { "key": "loanId",          "value": "" },
+    { "key": "udTitleId",       "value": "" },
+    { "key": "udCopyId",        "value": "" },
+    { "key": "udLoanId",        "value": "" }
   ],
   "item": [
 
@@ -234,7 +237,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\",\n  \"email\": \"{{userEmail}}\",\n  \"phone\": \"+353 87 000 0000\"\n}"
+              "raw": "{\n  \"email\": \"{{userEmail}}\"\n}"
             }
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
@@ -583,6 +586,27 @@
           ]}}]
         },
         {
+          "name": "Get active loans as STAFF",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/loans/active", "host": ["{{gatewayUrl}}"], "path": ["api","loans","active"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('STAFF active loans returns 200', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Response is an array', function () { pm.expect(body).to.be.an('array'); });",
+            "pm.test('Contains at least one active/overdue loan', function () { pm.expect(body.length).to.be.greaterThan(0); });",
+            "pm.test('Each item has userEmail, bookTitle, status', function () {",
+            "    body.forEach(function(l) {",
+            "        pm.expect(l).to.have.property('userEmail');",
+            "        pm.expect(l).to.have.property('bookTitle');",
+            "        pm.expect(['ACTIVE','OVERDUE']).to.include(l.status);",
+            "    });",
+            "});"
+          ]}}]
+        },
+        {
           "name": "Return a book (USER)",
           "request": {
             "method": "POST",
@@ -675,6 +699,199 @@
             "pm.test('Unauthenticated request is rejected (401)', function () {",
             "    pm.response.to.have.status(401);",
             "});"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "7 - Book Update & Delete",
+      "description": "Test PUT /api/books/{id} (edit title) and DELETE /api/books/{id} (delete title, including the active-loan 409 guard).",
+      "item": [
+        {
+          "name": "Add title for update/delete tests",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api","books","addTitle"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",         "value": "UD-Test Book E2E",                    "type": "text" },
+                { "key": "author",        "value": "UD E2E Author",                        "type": "text" },
+                { "key": "description",   "value": "Book for update and delete e2e tests.", "type": "text" },
+                { "key": "yearPublished", "value": "2021",                                 "type": "text" },
+                { "key": "genre",         "value": "NONFICTION",                           "type": "text" },
+                { "key": "language",      "value": "ENGLISH",                              "type": "text" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Create UD-test book (201 or 409)', function () {",
+            "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+            "});",
+            "const body = pm.response.json();",
+            "if (pm.response.code === 201) {",
+            "    pm.collectionVariables.set('udTitleId', String(body.id));",
+            "} else if (body.existingId) {",
+            "    pm.collectionVariables.set('udTitleId', String(body.existingId));",
+            "}",
+            "console.log('udTitleId:', pm.collectionVariables.get('udTitleId'));"
+          ]}}]
+        },
+        {
+          "name": "Add copy to UD-test title",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/addCopy?titleId={{udTitleId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","addCopy"],
+              "query": [{ "key": "titleId", "value": "{{udTitleId}}" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Add copy returns 201', function () { pm.response.to.have.status(201); });",
+            "pm.collectionVariables.set('udCopyId', String(pm.response.json().id));"
+          ]}}]
+        },
+        {
+          "name": "Update title (STAFF)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/{{udTitleId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","{{udTitleId}}"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",         "value": "UD-Test Book E2E (Updated)", "type": "text" },
+                { "key": "author",        "value": "Updated E2E Author",         "type": "text" },
+                { "key": "description",   "value": "Updated description.",       "type": "text" },
+                { "key": "yearPublished", "value": "2025",                       "type": "text" },
+                { "key": "genre",         "value": "SCIFI",                      "type": "text" },
+                { "key": "language",      "value": "ENGLISH",                    "type": "text" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Update title returns 200', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Response id matches udTitleId', function () {",
+            "    pm.expect(String(body.id)).to.equal(pm.collectionVariables.get('udTitleId'));",
+            "});",
+            "pm.test('Author updated', function () { pm.expect(body.author).to.equal('Updated E2E Author'); });",
+            "pm.test('yearPublished updated', function () { pm.expect(body.yearPublished).to.equal(2025); });",
+            "pm.test('Genre updated to SCIFI', function () { pm.expect(body.genre).to.equal('SCIFI'); });",
+            "pm.test('copiesAvailable preserved', function () { pm.expect(body).to.have.property('copiesAvailable'); });"
+          ]}}]
+        },
+        {
+          "name": "Update title as USER (expect 403)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/{{udTitleId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","{{udTitleId}}"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",         "value": "Blocked", "type": "text" },
+                { "key": "author",        "value": "Nobody",  "type": "text" },
+                { "key": "description",   "value": "Blocked", "type": "text" },
+                { "key": "yearPublished", "value": "2020",    "type": "text" },
+                { "key": "genre",         "value": "NONFICTION", "type": "text" },
+                { "key": "language",      "value": "ENGLISH",   "type": "text" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('USER role on update returns 403', function () { pm.response.to.have.status(403); });"
+          ]}}]
+        },
+        {
+          "name": "Borrow UD-test book (create active loan for delete guard)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/loans", "host": ["{{gatewayUrl}}"], "path": ["api","loans"] },
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"bookId\": {{udTitleId}},\n  \"email\": \"{{userEmail}}\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Borrow UD-test book returns 201', function () { pm.response.to.have.status(201); });",
+            "pm.collectionVariables.set('udLoanId', pm.response.json().id);",
+            "console.log('udLoanId:', pm.collectionVariables.get('udLoanId'));"
+          ]}}]
+        },
+        {
+          "name": "Delete UD-test book with active loan (expect 409 - loan guard)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/{{udTitleId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","{{udTitleId}}"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Delete with active loan returns 409', function () { pm.response.to.have.status(409); });",
+            "pm.test('Error message references loans', function () {",
+            "    const body = pm.response.json();",
+            "    pm.expect(body).to.have.property('error');",
+            "    pm.expect(body.error.toLowerCase()).to.include('loan');",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Return UD-test book loan",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/loans/{{udLoanId}}/return",
+              "host": ["{{gatewayUrl}}"], "path": ["api","loans","{{udLoanId}}","return"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Return loan returns 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('Loan status is RETURNED', function () {",
+            "    pm.expect(pm.response.json().status).to.equal('RETURNED');",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Delete title after loan returned (expect 204)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/{{udTitleId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","{{udTitleId}}"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Delete with no active loans returns 204', function () { pm.response.to.have.status(204); });"
+          ]}}]
+        },
+        {
+          "name": "Verify deleted title returns 404",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/{{udTitleId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","{{udTitleId}}"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Deleted title returns 404', function () { pm.response.to.have.status(404); });"
           ]}}]
         }
       ]

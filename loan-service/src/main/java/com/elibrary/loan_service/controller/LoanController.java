@@ -113,4 +113,17 @@ public class LoanController {
         List<ActiveLoanDTO> response = loanService.getAllActiveLoans();
         return ResponseEntity.ok(response);
     }
+
+    @Operation(
+            summary = "Check if a book has active or overdue loans",
+            description = "Internal endpoint used by book-service to determine whether a book can be safely deleted."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Check completed",
+                    content = @Content(schema = @Schema(implementation = Boolean.class)))
+    })
+    @GetMapping("/has-active-by-book")
+    public ResponseEntity<Boolean> hasActiveLoansForBook(@RequestParam("bookId") Long bookId) {
+        return ResponseEntity.ok(loanService.hasActiveLoansForBook(bookId));
+    }
 }

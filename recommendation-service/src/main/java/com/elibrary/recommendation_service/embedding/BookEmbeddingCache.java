@@ -55,6 +55,11 @@ public class BookEmbeddingCache {
         saveCache();
     }
 
+    public void removeBook(Long bookId) {
+        cache.remove(bookId);
+        saveCache();
+    }
+
     private void saveCache() {
         Map<String, float[]> raw = new HashMap<>();
         cache.forEach((id, vec) -> raw.put(String.valueOf(id), vec));

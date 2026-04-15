@@ -222,6 +222,11 @@ public class LoanService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public boolean hasActiveLoansForBook(Long bookId) {
+        return loanRepository.existsByBookIdAndStatusIn(bookId, List.of(LoanStatus.ACTIVE, LoanStatus.OVERDUE));
+    }
+
     @Transactional
     public void processOverdueLoans() {
         List<Loan> overdueLoans = loanRepository.findByStatusAndDueDateBefore(

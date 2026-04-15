@@ -127,6 +127,7 @@ services:
       EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
       APP_JWT_SECRET: ${APP_JWT_SECRET:-default-dev-jwt-secret-change-in-production-must-be-at-least-256-bits-long-for-hmac-sha}
       APP_JWT_ISSUER: ${APP_JWT_ISSUER:-elibrary-user-service}
+      APP_FRONTEND_ORIGIN: ${APP_FRONTEND_ORIGIN}
     depends_on:
       config-server:
         condition: service_healthy
@@ -157,6 +158,10 @@ services:
       APP_JWT_EXPIRATION_SECONDS: ${APP_JWT_EXPIRATION_SECONDS:-3600}
       DB_USERNAME: ${DB_USERNAME:-elibrary}
       DB_PASSWORD: ${DB_PASSWORD:-elibrary-dev-password}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-elibrary}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-elibrary-dev-password}
     depends_on:
       config-server:
         condition: service_healthy

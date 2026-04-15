@@ -36,4 +36,6 @@ public interface NotificationTaskRepository extends JpaRepository<NotificationTa
     );
 
     Optional<NotificationTask> findTopByLoanIdOrderByScheduledAtAsc(UUID loanId);
+
+    void deleteByLoanIdIn(List<UUID> loanIds);
 }
