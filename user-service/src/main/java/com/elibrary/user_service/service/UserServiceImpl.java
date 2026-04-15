@@ -149,6 +149,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public ProfileResponseDTO updateUserEmail(Long targetUserId, UpdateProfileRequestDTO request) {
+        return updateCurrentUser(targetUserId, request);
+    }
+
+    @Override
+    @Transactional
     public UserResponse updateUserRole(Long targetUserId, UpdateRoleRequestDTO request) {
         User user = userRepository.findById(targetUserId)
             .orElseThrow(() -> new UserNotFoundException(targetUserId));

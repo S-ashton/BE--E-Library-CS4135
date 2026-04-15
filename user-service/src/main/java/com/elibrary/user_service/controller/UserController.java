@@ -142,6 +142,29 @@ public class UserController {
     }
 
     @Operation(
+        summary = "Update the email of a user",
+        description = "Updates the email address for the specified user. Restricted to ADMIN.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Email updated",
+            content = @Content(schema = @Schema(implementation = ProfileResponseDTO.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Missing, expired, or invalid token", content = @Content),
+        @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
+        @ApiResponse(responseCode = "404", description = "User not found", content = @Content),
+        @ApiResponse(responseCode = "409", description = "Email already registered", content = @Content)
+    })
+    @PutMapping("/{id}/email")
+    public ResponseEntity<ProfileResponseDTO> updateUserEmail(
+        @PathVariable Long id,
+        @Valid @RequestBody UpdateProfileRequestDTO request
+    ) {
+        ProfileResponseDTO response = userService.updateUserEmail(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
         summary = "Update the role of a user",
         description = "Assigns a new role to the specified user. Restricted to ADMIN.",
         security = @SecurityRequirement(name = "bearerAuth")
