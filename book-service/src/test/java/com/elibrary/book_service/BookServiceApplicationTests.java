@@ -1,5 +1,6 @@
 package com.elibrary.book_service;
 
+import com.elibrary.book_service.messaging.BookEventPublisher;
 import com.elibrary.book_service.repository.elasticsearch.ElasticsearchRepo;
 import com.elibrary.book_service.service.MinioService;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,9 @@ class BookServiceApplicationTests {
 
 	@MockBean
 	MinioService minioService;
+
+	@MockBean
+	BookEventPublisher bookEventPublisher;
 
 	@Test
 	void contextLoads() {

@@ -11,6 +11,23 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
   elasticsearch:
     uris: http://localhost:9201
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
 eureka:
   client:
     enabled: false
+
+loan:
+  events:
+    exchange: loan.events
+    borrowed-routing-key: loan.borrowed
+    returned-routing-key: loan.returned
+    borrowed-queue: book-service.loan.borrowed
+    returned-queue: book-service.loan.returned
+book:
+  messaging:
+    enabled: false
+  events:
+    exchange: book.events
+    added-routing-key: book.added

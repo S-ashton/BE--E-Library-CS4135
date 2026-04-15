@@ -4,10 +4,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
-import com.elibrary.book_service.dto.TitleResponseDTO;
 
 @Component
+@ConditionalOnProperty(
+        name = "book.messaging.enabled",
+        havingValue = "true",
+        matchIfMissing = true
+)
 public class BookEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(BookEventPublisher.class);
