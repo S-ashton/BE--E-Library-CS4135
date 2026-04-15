@@ -35,7 +35,7 @@ server:
 
 app:
   cors:
-    allowed-origin: ${APP_FRONTEND_ORIGIN}
+    allowed-origin: ${APP_FRONTEND_ORIGIN:http://localhost:5173}
   jwt:
     secret: test-jwt-secret-for-api-gateway-only-1234567890
     issuer: user-service-test

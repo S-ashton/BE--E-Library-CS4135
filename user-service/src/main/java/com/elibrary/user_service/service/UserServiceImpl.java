@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -36,7 +37,7 @@ public class UserServiceImpl implements UserService {
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final UserEventPublisher userEventPublisher;
+    private final Optional<UserEventPublisher> userEventPublisher;
 
     public UserServiceImpl(
         UserRepository userRepository,
@@ -45,7 +46,7 @@ public class UserServiceImpl implements UserService {
         JwtService jwtService,
         RefreshTokenService refreshTokenService,
         RefreshTokenRepository refreshTokenRepository,
-        UserEventPublisher userEventPublisher
+        Optional<UserEventPublisher> userEventPublisher
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -124,9 +125,9 @@ public class UserServiceImpl implements UserService {
         User saved = userRepository.save(user);
 
         if (emailChanged) {
-            userEventPublisher.publishUserEmailUpdated(
+            userEventPublisher.ifPresent(pub -> pub.publishUserEmailUpdated(
                 new UserEmailUpdatedEvent(saved.getId(), saved.getEmail(), Instant.now())
-            );
+            ));
         }
 
         return ProfileResponseDTO.from(saved);
@@ -166,9 +167,9 @@ public class UserServiceImpl implements UserService {
         refreshTokenRepository.deleteByUserId(targetUserId);
         userRepository.delete(user);
 
-        userEventPublisher.publishUserDeleted(
+        userEventPublisher.ifPresent(pub -> pub.publishUserDeleted(
             new UserDeletedEvent(targetUserId, user.getEmail(), Instant.now())
-        );
+        ));
     }
 
     @Override
