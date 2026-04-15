@@ -12,6 +12,7 @@ import com.sendgrid.helpers.mail.objects.Email;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -37,6 +38,7 @@ public class EmailNotificationService {
         this.sendGrid = sendGrid;
     }
 
+    @Async
     public void sendBorrowConfirmation(String to, Loan loan) {
         String subject = "E-Library: Book Borrowed Successfully";
 
