@@ -15,6 +15,11 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
 
 eureka:
   client:
@@ -32,3 +37,9 @@ app:
     secret: ${APP_JWT_SECRET:dev-only-jwt-secret-do-not-use-in-production-must-be-at-least-256-bits}
     expiration-seconds: ${APP_JWT_EXPIRATION_SECONDS:3600}
     issuer: ${APP_JWT_ISSUER:elibrary-user-service}
+
+user:
+  events:
+    exchange: user.events
+    deleted-routing-key: user.deleted
+    email-updated-routing-key: user.email.updated

@@ -60,6 +60,14 @@ loan:
     borrowed-routing-key: loan.borrowed
     returned-routing-key: loan.returned
 
+user:
+  events:
+    exchange: user.events
+    deleted-routing-key: user.deleted
+    email-updated-routing-key: user.email.updated
+    deleted-queue: loan-service.user-deleted
+    email-updated-queue: loan-service.user-email-updated
+
 sendgrid:
   api-key: ${SENDGRID_API_KEY:}
   from-email: ${SENDGRID_FROM_EMAIL:}

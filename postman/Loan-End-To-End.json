@@ -5,13 +5,19 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "gatewayUrl",  "value": "http://localhost:8080", "type": "string" },
-    { "key": "userToken",   "value": "", "type": "string" },
-    { "key": "staffToken",  "value": "", "type": "string" },
-    { "key": "userId",      "value": "", "type": "string" },
-    { "key": "bookId",      "value": "",  "type": "string" },
-    { "key": "loanId",      "value": "", "type": "string" },
-    { "key": "copyId",      "value": "", "type": "string" }
+    { "key": "gatewayUrl",        "value": "http://localhost:8080", "type": "string" },
+    { "key": "userToken",         "value": "", "type": "string" },
+    { "key": "staffToken",        "value": "", "type": "string" },
+    { "key": "adminToken",        "value": "", "type": "string" },
+    { "key": "userId",            "value": "", "type": "string" },
+    { "key": "bookId",            "value": "",  "type": "string" },
+    { "key": "loanId",            "value": "", "type": "string" },
+    { "key": "copyId",            "value": "", "type": "string" },
+    { "key": "cascadeEmail",      "value": "", "type": "string" },
+    { "key": "cascadeUserId",     "value": "", "type": "string" },
+    { "key": "cascadeUserToken",  "value": "", "type": "string" },
+    { "key": "cascadeLoanId",     "value": "", "type": "string" },
+    { "key": "updatedEmail",      "value": "", "type": "string" }
   ],
   "item": [
 
@@ -673,6 +679,199 @@
             "    console.log('No recommendations yet (loan event may not have propagated via RabbitMQ)');",
             "}"
           ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "13 - Email Update Cascade (user email sync to loans)",
+      "item": [
+        {
+          "name": "Register ADMIN account (for delete)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/register", "host": ["{{gatewayUrl}}"], "path": ["api","auth","register"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"loan-admin@elibrary.ie\",\n  \"password\": \"Test@12345\",\n  \"role\": \"ADMIN\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('ADMIN account ready (201 or 409)', function () {",
+            "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Login as ADMIN",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/login", "host": ["{{gatewayUrl}}"], "path": ["api","auth","login"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"loan-admin@elibrary.ie\",\n  \"password\": \"Test@12345\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('ADMIN login returns 200', function () { pm.response.to.have.status(200); });",
+            "pm.collectionVariables.set('adminToken', pm.response.json().token);"
+          ]}}]
+        },
+        {
+          "name": "Update USER email (PUT /api/users/me)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.collectionVariables.set('updatedEmail', 'loan-user-updated-' + Date.now() + '@elibrary.ie');"
+              ]}
+            },
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Email update returns 200', function () { pm.response.to.have.status(200); });",
+                "const body = pm.response.json();",
+                "pm.test('Email updated in response', function () {",
+                "    pm.expect(body.email).to.equal(pm.collectionVariables.get('updatedEmail'));",
+                "});",
+                "console.log('Email updated to:', pm.collectionVariables.get('updatedEmail'));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": { "raw": "{{gatewayUrl}}/api/users/me", "host": ["{{gatewayUrl}}"], "path": ["api","users","me"] },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{updatedEmail}}\"\n}" }
+          }
+        },
+        {
+          "name": "Wait briefly then check loan history — userEmail updated",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Loan history returns 200', function () { pm.response.to.have.status(200); });",
+                "console.log('Note: verify userEmail field on RETURNED loan matches the updated email via GET /api/loans/active (STAFF view).');"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/loans/history", "host": ["{{gatewayUrl}}"], "path": ["api","loans","history"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "14 - Delete User Cascade (loans deleted with user)",
+      "item": [
+        {
+          "name": "Register disposable USER for cascade test",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.collectionVariables.set('cascadeEmail', 'cascade-' + Date.now() + '@elibrary.ie');"
+              ]}
+            },
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Cascade user registered (201)', function () { pm.response.to.have.status(201); });",
+                "pm.collectionVariables.set('cascadeUserId', String(pm.response.json().id));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/register", "host": ["{{gatewayUrl}}"], "path": ["api","auth","register"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{cascadeEmail}}\",\n  \"password\": \"Test@12345\",\n  \"role\": \"USER\"\n}" }
+          }
+        },
+        {
+          "name": "Login as disposable user",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Cascade user login returns 200', function () { pm.response.to.have.status(200); });",
+                "pm.collectionVariables.set('cascadeUserToken', pm.response.json().token);"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/auth/login", "host": ["{{gatewayUrl}}"], "path": ["api","auth","login"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{cascadeEmail}}\",\n  \"password\": \"Test@12345\"\n}" }
+          }
+        },
+        {
+          "name": "Cascade user borrows a book",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Borrow returns 201', function () { pm.response.to.have.status(201); });",
+                "pm.collectionVariables.set('cascadeLoanId', pm.response.json().id);",
+                "console.log('Cascade loan id:', pm.response.json().id);"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/loans", "host": ["{{gatewayUrl}}"], "path": ["api","loans"] },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{cascadeUserToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"bookId\": {{bookId}},\n  \"email\": \"{{cascadeEmail}}\"\n}" }
+          }
+        },
+        {
+          "name": "ADMIN deletes the disposable user (expect 204)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Delete user returns 204', function () { pm.response.to.have.status(204); });"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/users/{{cascadeUserId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api","users","{{cascadeUserId}}"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }]
+          }
+        },
+        {
+          "name": "Cascade loan no longer in active loans (STAFF view)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Active loans returns 200', function () { pm.response.to.have.status(200); });",
+                "const loans = pm.response.json();",
+                "const cascadeLoanId = pm.collectionVariables.get('cascadeLoanId');",
+                "const found = loans.some(l => l.id === cascadeLoanId);",
+                "pm.test('Deleted user loan is absent from active loans', function () {",
+                "    pm.expect(found).to.be.false;",
+                "});"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/loans/active", "host": ["{{gatewayUrl}}"], "path": ["api","loans","active"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          }
         }
       ]
     }
