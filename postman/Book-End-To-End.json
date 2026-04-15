@@ -10,7 +10,12 @@
     { "key": "staffToken",    "value": "", "type": "string" },
     { "key": "testBookTitle", "value": "", "type": "string" },
     { "key": "testBookId",    "value": "", "type": "string" },
-    { "key": "testCopyId",    "value": "", "type": "string" }
+    { "key": "testCopyId",        "value": "", "type": "string" },
+    { "key": "totalCopyCount",    "value": "", "type": "string" },
+    { "key": "availableCopyCount","value": "", "type": "string" },
+    { "key": "deleteTestBookId",  "value": "", "type": "string" },
+    { "key": "deleteTestCopyId",  "value": "", "type": "string" },
+    { "key": "deleteLoanId",      "value": "", "type": "string" }
   ],
   "item": [
 
@@ -899,6 +904,308 @@
             "const originalCount = parseInt(pm.collectionVariables.get('availableCopyCount'));",
             "pm.test('AVAILABLE count is restored to original value', function () {",
             "    pm.expect(restoredCount).to.equal(originalCount);",
+            "});"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "13 - Update Title",
+      "item": [
+        {
+          "name": "Update title (STAFF)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/{{testBookId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","{{testBookId}}"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",         "value": "{{testBookTitle}} (Updated)", "type": "text" },
+                { "key": "author",        "value": "E2E Updated Author",          "type": "text" },
+                { "key": "description",   "value": "Updated description for e2e testing.", "type": "text" },
+                { "key": "yearPublished", "value": "2025",                        "type": "text" },
+                { "key": "genre",         "value": "SCIFI",                       "type": "text" },
+                { "key": "language",      "value": "ENGLISH",                     "type": "text" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Update title returns 200', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Response id matches testBookId', function () {",
+            "    pm.expect(String(body.id)).to.equal(pm.collectionVariables.get('testBookId'));",
+            "});",
+            "pm.test('Author field updated', function () { pm.expect(body.author).to.equal('E2E Updated Author'); });",
+            "pm.test('yearPublished updated to 2025', function () { pm.expect(body.yearPublished).to.equal(2025); });",
+            "pm.test('Genre updated to SCIFI', function () { pm.expect(body.genre).to.equal('SCIFI'); });",
+            "pm.test('copiesAvailable preserved after update', function () {",
+            "    pm.expect(body).to.have.property('copiesAvailable');",
+            "    pm.expect(body.copiesAvailable).to.be.a('number');",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Update title as USER (expect 403)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/{{testBookId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","{{testBookId}}"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",         "value": "Blocked Update", "type": "text" },
+                { "key": "author",        "value": "Nobody",         "type": "text" },
+                { "key": "description",   "value": "Blocked.",       "type": "text" },
+                { "key": "yearPublished", "value": "2020",           "type": "text" },
+                { "key": "genre",         "value": "NONFICTION",     "type": "text" },
+                { "key": "language",      "value": "ENGLISH",        "type": "text" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('USER role on update title returns 403', function () { pm.response.to.have.status(403); });"
+          ]}}]
+        },
+        {
+          "name": "Update without auth (expect 401)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/{{testBookId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","{{testBookId}}"]
+            },
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",         "value": "No Auth Update", "type": "text" },
+                { "key": "author",        "value": "Nobody",         "type": "text" },
+                { "key": "description",   "value": "No auth.",       "type": "text" },
+                { "key": "yearPublished", "value": "2020",           "type": "text" },
+                { "key": "genre",         "value": "NONFICTION",     "type": "text" },
+                { "key": "language",      "value": "ENGLISH",        "type": "text" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Update without auth returns 401', function () { pm.response.to.have.status(401); });"
+          ]}}]
+        },
+        {
+          "name": "Update non-existent title (expect 404)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/999999",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","999999"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",         "value": "Ghost Book",    "type": "text" },
+                { "key": "author",        "value": "Nobody",        "type": "text" },
+                { "key": "description",   "value": "Doesnt exist.", "type": "text" },
+                { "key": "yearPublished", "value": "2020",          "type": "text" },
+                { "key": "genre",         "value": "NONFICTION",    "type": "text" },
+                { "key": "language",      "value": "ENGLISH",       "type": "text" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Update non-existent title returns 404', function () { pm.response.to.have.status(404); });",
+            "pm.test('Error message present', function () {",
+            "    pm.expect(pm.response.json()).to.have.property('error');",
+            "});"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "14 - Delete Title",
+      "item": [
+        {
+          "name": "Create book for delete tests",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/books/addTitle", "host": ["{{gatewayUrl}}"], "path": ["api","books","addTitle"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",         "value": "Delete-Test Book E2E", "type": "text" },
+                { "key": "author",        "value": "Delete E2E Author",    "type": "text" },
+                { "key": "description",   "value": "Created to test the deletion flow.", "type": "text" },
+                { "key": "yearPublished", "value": "2020",                 "type": "text" },
+                { "key": "genre",         "value": "NONFICTION",           "type": "text" },
+                { "key": "language",      "value": "ENGLISH",              "type": "text" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Create delete-test book returns 201 or 409', function () {",
+            "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+            "});",
+            "const body = pm.response.json();",
+            "if (pm.response.code === 201) {",
+            "    pm.collectionVariables.set('deleteTestBookId', String(body.id));",
+            "} else if (body.existingId) {",
+            "    pm.collectionVariables.set('deleteTestBookId', String(body.existingId));",
+            "}",
+            "console.log('deleteTestBookId:', pm.collectionVariables.get('deleteTestBookId'));"
+          ]}}]
+        },
+        {
+          "name": "Add copy to delete-test book",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/addCopy?titleId={{deleteTestBookId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","addCopy"],
+              "query": [{ "key": "titleId", "value": "{{deleteTestBookId}}" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Add copy returns 201', function () { pm.response.to.have.status(201); });",
+            "pm.collectionVariables.set('deleteTestCopyId', String(pm.response.json().id));",
+            "console.log('deleteTestCopyId:', pm.collectionVariables.get('deleteTestCopyId'));"
+          ]}}]
+        },
+        {
+          "name": "Delete without auth (expect 401)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/{{deleteTestBookId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","{{deleteTestBookId}}"]
+            },
+            "header": []
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Delete without auth returns 401', function () { pm.response.to.have.status(401); });"
+          ]}}]
+        },
+        {
+          "name": "Delete as USER (expect 403)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/{{deleteTestBookId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","{{deleteTestBookId}}"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('USER role on delete returns 403', function () { pm.response.to.have.status(403); });"
+          ]}}]
+        },
+        {
+          "name": "Borrow delete-test book (create active loan for guard test)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{gatewayUrl}}/api/loans", "host": ["{{gatewayUrl}}"], "path": ["api","loans"] },
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"bookId\": {{deleteTestBookId}},\n  \"email\": \"book-user@elibrary.ie\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Borrow delete-test book returns 201', function () { pm.response.to.have.status(201); });",
+            "const body = pm.response.json();",
+            "pm.test('Loan has ACTIVE status', function () { pm.expect(body.status).to.equal('ACTIVE'); });",
+            "pm.collectionVariables.set('deleteLoanId', body.id);",
+            "console.log('Active loan for delete-guard test, loanId:', body.id);"
+          ]}}]
+        },
+        {
+          "name": "Delete title with active loan (expect 409 - loan guard)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/{{deleteTestBookId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","{{deleteTestBookId}}"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Delete with active loan returns 409', function () { pm.response.to.have.status(409); });",
+            "const body = pm.response.json();",
+            "pm.test('Error message references loans', function () {",
+            "    pm.expect(body).to.have.property('error');",
+            "    pm.expect(body.error.toLowerCase()).to.include('loan');",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Return active loan before deletion",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/loans/{{deleteLoanId}}/return",
+              "host": ["{{gatewayUrl}}"], "path": ["api","loans","{{deleteLoanId}}","return"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Return loan returns 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('Loan status is RETURNED', function () {",
+            "    pm.expect(pm.response.json().status).to.equal('RETURNED');",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Delete title after loan returned (expect 204)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/{{deleteTestBookId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","{{deleteTestBookId}}"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Delete with no active loans returns 204', function () { pm.response.to.have.status(204); });"
+          ]}}]
+        },
+        {
+          "name": "Verify deleted title returns 404",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/{{deleteTestBookId}}",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","{{deleteTestBookId}}"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Deleted title returns 404', function () { pm.response.to.have.status(404); });"
+          ]}}]
+        },
+        {
+          "name": "Delete non-existent title (expect 404)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/books/999999",
+              "host": ["{{gatewayUrl}}"], "path": ["api","books","999999"]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Delete non-existent title returns 404', function () { pm.response.to.have.status(404); });",
+            "pm.test('Error message present', function () {",
+            "    pm.expect(pm.response.json()).to.have.property('error');",
             "});"
           ]}}]
         }

@@ -579,7 +579,72 @@
     },
 
     {
-      "name": "11 - Recommendation Service Integration",
+      "name": "11 - Active Loans",
+      "item": [
+        {
+          "name": "Get active loans as STAFF",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/loans/active", "host": ["{{gatewayUrl}}"], "path": ["api","loans","active"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('STAFF get active loans returns 200', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Response is an array', function () { pm.expect(body).to.be.an('array'); });",
+            "if (body.length > 0) {",
+            "    pm.test('Each active loan has required fields', function () {",
+            "        body.forEach(function(loan) {",
+            "            pm.expect(loan).to.have.property('id');",
+            "            pm.expect(loan).to.have.property('userEmail');",
+            "            pm.expect(loan).to.have.property('bookTitle');",
+            "            pm.expect(loan).to.have.property('bookId');",
+            "            pm.expect(loan).to.have.property('dueDate');",
+            "            pm.expect(loan).to.have.property('status');",
+            "            pm.expect(loan).to.have.property('fineAmount');",
+            "        });",
+            "    });",
+            "    pm.test('All results have ACTIVE or OVERDUE status', function () {",
+            "        body.forEach(function(loan) {",
+            "            pm.expect(['ACTIVE','OVERDUE']).to.include(loan.status);",
+            "        });",
+            "    });",
+            "    console.log('Active/overdue loan count:', body.length);",
+            "} else {",
+            "    console.log('No active or overdue loans — run borrow tests first.');",
+            "}"
+          ]}}]
+        },
+        {
+          "name": "Get active loans as USER (expect 403)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/loans/active", "host": ["{{gatewayUrl}}"], "path": ["api","loans","active"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }]
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('USER role on /api/loans/active returns 403', function () { pm.response.to.have.status(403); });",
+            "pm.test('Error body has error field', function () {",
+            "    pm.expect(pm.response.json()).to.have.property('error');",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "Get active loans without auth (expect 401)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{gatewayUrl}}/api/loans/active", "host": ["{{gatewayUrl}}"], "path": ["api","loans","active"] },
+            "header": []
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('No token on /api/loans/active returns 401', function () { pm.response.to.have.status(401); });"
+          ]}}]
+        }
+      ]
+    },
+
+    {
+      "name": "12 - Recommendation Service Integration",
       "item": [
         {
           "name": "Recommendations reflect loan history (borrow triggers event)",

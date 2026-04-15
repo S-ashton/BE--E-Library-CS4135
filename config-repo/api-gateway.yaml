@@ -66,7 +66,39 @@ management:
 
 app:
   cors:
-    allowed-origin: ${APP_FRONTEND_ORIGIN:http://localhost:3000}
+    allowed-origin: ${APP_FRONTEND_ORIGIN}
   jwt:
     secret: ${APP_JWT_SECRET:dev-only-jwt-secret-do-not-use-in-production-must-be-at-least-256-bits}
     issuer: ${APP_JWT_ISSUER:elibrary-user-service}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      book-service:
+        sliding-window-size: 20
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 15s
+        permitted-number-of-calls-in-half-open-state: 5
+        slow-call-duration-threshold: 10s
+        slow-call-rate-threshold: 80
+      loan-service:
+        sliding-window-size: 20
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 15s
+        permitted-number-of-calls-in-half-open-state: 5
+        slow-call-duration-threshold: 10s
+        slow-call-rate-threshold: 80
+      user-service:
+        sliding-window-size: 20
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 15s
+        permitted-number-of-calls-in-half-open-state: 5
+        slow-call-duration-threshold: 10s
+        slow-call-rate-threshold: 80
+      recommendation-service:
+        sliding-window-size: 20
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 15s
+        permitted-number-of-calls-in-half-open-state: 5
+        slow-call-duration-threshold: 10s
+        slow-call-rate-threshold: 80

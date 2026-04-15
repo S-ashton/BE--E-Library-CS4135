@@ -260,11 +260,11 @@
           "name": "JWT on a different protected route also enforced (expect 401)",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{gatewayUrl}}/api/books", "host": ["{{gatewayUrl}}"], "path": ["api","books"] },
+            "url": { "raw": "{{gatewayUrl}}/api/loans/history", "host": ["{{gatewayUrl}}"], "path": ["api","loans","history"] },
             "header": []
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('No token on /api/books returns 401', function () { pm.response.to.have.status(401); });",
+            "pm.test('No token on /api/loans/history returns 401', function () { pm.response.to.have.status(401); });",
             "pm.test('Message is Authentication token is required', function () {",
             "    pm.expect(pm.response.json().message).to.equal('Authentication token is required');",
             "});"
@@ -487,7 +487,7 @@
           "name": "Gateway 401 error shape validation",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{gatewayUrl}}/api/books", "host": ["{{gatewayUrl}}"], "path": ["api","books"] },
+            "url": { "raw": "{{gatewayUrl}}/api/loans/history", "host": ["{{gatewayUrl}}"], "path": ["api","loans","history"] },
             "header": []
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
@@ -520,7 +520,7 @@
             "method": "OPTIONS",
             "url": { "raw": "{{gatewayUrl}}/api/users/me", "host": ["{{gatewayUrl}}"], "path": ["api","users","me"] },
             "header": [
-              { "key": "Origin",                         "value": "http://localhost:3000" },
+              { "key": "Origin",                         "value": "http://localhost:5173" },
               { "key": "Access-Control-Request-Method",  "value": "GET" },
               { "key": "Access-Control-Request-Headers", "value": "Authorization" }
             ]
@@ -532,7 +532,7 @@
             "pm.test('CORS Allow-Origin header present', function () {",
             "    const acao = pm.response.headers.get('Access-Control-Allow-Origin');",
             "    pm.expect(acao).to.not.be.null;",
-            "    pm.expect(acao).to.equal('http://localhost:3000');",
+            "    pm.expect(acao).to.equal('http://localhost:5173');",
             "});",
             "pm.test('CORS Allow-Methods header present', function () {",
             "    pm.expect(pm.response.headers.get('Access-Control-Allow-Methods')).to.not.be.null;",
@@ -548,7 +548,7 @@
             "method": "OPTIONS",
             "url": { "raw": "{{gatewayUrl}}/api/auth/login", "host": ["{{gatewayUrl}}"], "path": ["api","auth","login"] },
             "header": [
-              { "key": "Origin",                         "value": "http://localhost:3000" },
+              { "key": "Origin",                         "value": "http://localhost:5173" },
               { "key": "Access-Control-Request-Method",  "value": "POST" },
               { "key": "Access-Control-Request-Headers", "value": "Content-Type" }
             ]
