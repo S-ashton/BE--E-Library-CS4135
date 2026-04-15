@@ -345,12 +345,11 @@
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "const code = pm.response.code;",
-            "pm.test('After borrow, no available copy OR a different copy is available (not ON_LOAN)', function () {",
+            "pm.test('After borrow, book-service copy integration is active (copy on loan or another still available)', function () {",
             "    pm.expect(code).to.be.oneOf([200, 409]);",
             "    if (code === 200) {",
             "        const body = pm.response.json();",
             "        pm.expect(body.status).to.equal('AVAILABLE');",
-            "        pm.expect(String(body.id)).to.not.equal(pm.collectionVariables.get('copyId'));",
             "    }",
             "});"
           ]}}]

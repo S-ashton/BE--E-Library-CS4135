@@ -9,6 +9,21 @@ spring:
     gateway:
       server:
         webflux:
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origins:
+                  - ${APP_FRONTEND_ORIGIN:http://localhost:5173}
+                allowed-methods:
+                  - GET
+                  - POST
+                  - PUT
+                  - PATCH
+                  - DELETE
+                  - OPTIONS
+                allowed-headers:
+                  - "*"
+                allow-credentials: true
           routes:
             - id: user-service
               uri: lb://user-service
@@ -66,7 +81,7 @@ management:
 
 app:
   cors:
-    allowed-origin: ${APP_FRONTEND_ORIGIN}
+    allowed-origin: ${APP_FRONTEND_ORIGIN:http://localhost:5173}
   jwt:
     secret: ${APP_JWT_SECRET:dev-only-jwt-secret-do-not-use-in-production-must-be-at-least-256-bits}
     issuer: ${APP_JWT_ISSUER:elibrary-user-service}

@@ -6,7 +6,6 @@ import io.jsonwebtoken.JwtException;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -17,9 +16,6 @@ import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.reactive.CorsWebFilter;
-import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
@@ -34,25 +30,6 @@ public class GatewayConfig {
             "/actuator/",
             "/swagger-ui/",
             "/v3/api-docs");
-
-    @Bean
-    public CorsWebFilter corsWebFilter(@Value("${app.cors.allowed-origin}") String allowedOrigin) {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin(allowedOrigin);
-        configuration.setAllowCredentials(true);
-        configuration.addAllowedHeader(CorsConfiguration.ALL);
-        configuration.addAllowedMethod(HttpMethod.GET);
-        configuration.addAllowedMethod(HttpMethod.POST);
-        configuration.addAllowedMethod(HttpMethod.PUT);
-        configuration.addAllowedMethod(HttpMethod.PATCH);
-        configuration.addAllowedMethod(HttpMethod.DELETE);
-        configuration.addAllowedMethod(HttpMethod.OPTIONS);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-
-        return new CorsWebFilter(source);
-    }
 
     @Bean
     public GlobalFilter authorizationHeaderFilter(GatewayJwtService gatewayJwtService) {

@@ -381,6 +381,7 @@
                 "pm.test('Password NOT in update response', function () {",
                 "    pm.expect(body).to.not.have.property('password');",
                 "});",
+                "pm.collectionVariables.set('testEmail', body.email);",
                 "console.log('Updated email to:', body.email);"
               ]}
             }
