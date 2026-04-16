@@ -5,18 +5,18 @@ import com.elibrary.book_service.repository.elasticsearch.ElasticsearchRepo;
 import com.elibrary.book_service.service.MinioService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest
 class BookServiceApplicationTests {
 
-	@MockBean
+	@MockitoBean
 	ElasticsearchRepo elasticsearchRepo;
 
-	@MockBean
+	@MockitoBean
 	MinioService minioService;
 
-	@MockBean
+	@MockitoBean
 	BookEventPublisher bookEventPublisher;
 
 	@Test
