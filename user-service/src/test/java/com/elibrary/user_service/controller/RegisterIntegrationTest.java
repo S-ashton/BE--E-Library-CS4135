@@ -61,7 +61,7 @@ class RegisterIntegrationTest {
     }
 
     @Test
-    @DisplayName("FR-USER-01.4 — STAFF role is accepted")
+    @DisplayName("FR-USER-01.4 — role field in body is ignored; account always created as USER")
     void register_staffRole_returns201() throws Exception {
         var payload = Map.of(
                 "email", "staff@elibrary.ie",
@@ -73,11 +73,11 @@ class RegisterIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.role").value("STAFF"));
+                .andExpect(jsonPath("$.role").value("USER"));
     }
 
     @Test
-    @DisplayName("FR-USER-01.4 — ADMIN role is accepted")
+    @DisplayName("FR-USER-01.4 — role field in body is ignored; account always created as USER")
     void register_adminRole_returns201() throws Exception {
         var payload = Map.of(
                 "email", "admin@elibrary.ie",
@@ -89,7 +89,7 @@ class RegisterIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.role").value("ADMIN"));
+                .andExpect(jsonPath("$.role").value("USER"));
     }
 
     @Test

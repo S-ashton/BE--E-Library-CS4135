@@ -34,6 +34,8 @@ class LoanControllerTest {
 
     private static final String AUTH_USER_HEADER = "X-Authenticated-User-Id";
     private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String GATEWAY_USER_HEADER = "X-Authenticated-User";
+    private static final String GATEWAY_ROLE_HEADER = "X-Authenticated-Role";
 
     @Autowired
     private MockMvc mockMvc;
@@ -66,6 +68,8 @@ class LoanControllerTest {
         )).thenReturn(response);
 
         mockMvc.perform(post("/api/loans")
+                        .header(GATEWAY_USER_HEADER, "test-user@elibrary.ie")
+                        .header(GATEWAY_ROLE_HEADER, "USER")
                         .header(AUTH_USER_HEADER, "1")
                         .header(AUTHORIZATION_HEADER, "Bearer test-token")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -98,6 +102,8 @@ class LoanControllerTest {
         )).thenThrow(new DuplicateActiveLoanException("User already has an active loan for this book"));
 
         mockMvc.perform(post("/api/loans")
+                        .header(GATEWAY_USER_HEADER, "test-user@elibrary.ie")
+                        .header(GATEWAY_ROLE_HEADER, "USER")
                         .header(AUTH_USER_HEADER, "1")
                         .header(AUTHORIZATION_HEADER, "Bearer test-token")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -117,6 +123,8 @@ class LoanControllerTest {
         BorrowRequestDTO request = new BorrowRequestDTO(1L, "22367543@studentmail.ul.ie");
 
         mockMvc.perform(post("/api/loans")
+                        .header(GATEWAY_USER_HEADER, "test-user@elibrary.ie")
+                        .header(GATEWAY_ROLE_HEADER, "USER")
                         .header(AUTHORIZATION_HEADER, "Bearer test-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -151,6 +159,8 @@ class LoanControllerTest {
         when(loanService.getLoanHistory(1L)).thenReturn(List.of(activeLoan, returnedLoan));
 
         mockMvc.perform(get("/api/loans/history")
+                        .header(GATEWAY_USER_HEADER, "test-user@elibrary.ie")
+                        .header(GATEWAY_ROLE_HEADER, "USER")
                         .header(AUTH_USER_HEADER, "1")
                         .header(AUTHORIZATION_HEADER, "Bearer test-token"))
                 .andExpect(status().isOk())
@@ -167,6 +177,8 @@ class LoanControllerTest {
     @DisplayName("GET /api/loans/history returns 401 when authenticated user header is missing")
     void getLoanHistory_missingUserHeader_returns401() throws Exception {
         mockMvc.perform(get("/api/loans/history")
+                        .header(GATEWAY_USER_HEADER, "test-user@elibrary.ie")
+                        .header(GATEWAY_ROLE_HEADER, "USER")
                         .header(AUTHORIZATION_HEADER, "Bearer test-token"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
@@ -192,6 +204,8 @@ class LoanControllerTest {
                 .thenReturn(returnedLoan);
 
         mockMvc.perform(post("/api/loans/{loanId}/return", loanId)
+                        .header(GATEWAY_USER_HEADER, "test-user@elibrary.ie")
+                        .header(GATEWAY_ROLE_HEADER, "USER")
                         .header(AUTHORIZATION_HEADER, "Bearer test-token"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
@@ -211,6 +225,8 @@ class LoanControllerTest {
                 .thenThrow(new LoanAlreadyReturnedException("Loan is already returned"));
 
         mockMvc.perform(post("/api/loans/{loanId}/return", loanId)
+                        .header(GATEWAY_USER_HEADER, "test-user@elibrary.ie")
+                        .header(GATEWAY_ROLE_HEADER, "USER")
                         .header(AUTHORIZATION_HEADER, "Bearer test-token"))
                 .andExpect(status().isConflict());
     }
@@ -224,6 +240,8 @@ class LoanControllerTest {
                 .thenThrow(new LoanNotFoundException("Loan not found"));
 
         mockMvc.perform(post("/api/loans/{loanId}/return", loanId)
+                        .header(GATEWAY_USER_HEADER, "test-user@elibrary.ie")
+                        .header(GATEWAY_ROLE_HEADER, "USER")
                         .header(AUTHORIZATION_HEADER, "Bearer test-token"))
                 .andExpect(status().isNotFound());
     }
