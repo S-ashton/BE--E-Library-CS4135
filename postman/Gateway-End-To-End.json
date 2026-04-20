@@ -520,7 +520,7 @@
             "method": "OPTIONS",
             "url": { "raw": "{{gatewayUrl}}/api/users/me", "host": ["{{gatewayUrl}}"], "path": ["api","users","me"] },
             "header": [
-              { "key": "Origin",                         "value": "http://localhost:5173" },
+              { "key": "Origin",                         "value": "http://localhost:3000" },
               { "key": "Access-Control-Request-Method",  "value": "GET" },
               { "key": "Access-Control-Request-Headers", "value": "Authorization" }
             ]
@@ -532,7 +532,7 @@
             "pm.test('CORS Allow-Origin header present', function () {",
             "    const acao = pm.response.headers.get('Access-Control-Allow-Origin');",
             "    pm.expect(acao).to.not.be.null;",
-            "    pm.expect(acao).to.equal('http://localhost:5173');",
+            "    pm.expect(acao).to.equal('http://localhost:3000');",
             "});",
             "pm.test('CORS Allow-Methods header present', function () {",
             "    pm.expect(pm.response.headers.get('Access-Control-Allow-Methods')).to.not.be.null;",
@@ -548,7 +548,7 @@
             "method": "OPTIONS",
             "url": { "raw": "{{gatewayUrl}}/api/auth/login", "host": ["{{gatewayUrl}}"], "path": ["api","auth","login"] },
             "header": [
-              { "key": "Origin",                         "value": "http://localhost:5173" },
+              { "key": "Origin",                         "value": "http://localhost:3000" },
               { "key": "Access-Control-Request-Method",  "value": "POST" },
               { "key": "Access-Control-Request-Headers", "value": "Content-Type" }
             ]
