@@ -13,6 +13,7 @@ import com.elibrary.user_service.exception.UserNotFoundException;
 import com.elibrary.user_service.messaging.UserDeletedEvent;
 import com.elibrary.user_service.messaging.UserEmailUpdatedEvent;
 import com.elibrary.user_service.messaging.UserEventPublisher;
+import com.elibrary.user_service.model.Role;
 import com.elibrary.user_service.model.User;
 import com.elibrary.user_service.repository.RefreshTokenRepository;
 import com.elibrary.user_service.repository.UserRepository;
@@ -66,7 +67,7 @@ public class UserServiceImpl implements UserService {
 
         String encodedPassword = passwordEncoder.encode(request.getPassword());
 
-        User user = new User(request.getEmail(), encodedPassword, request.getRole());
+        User user = new User(request.getEmail(), encodedPassword, Role.USER);
 
         User saved = userRepository.save(user);
 

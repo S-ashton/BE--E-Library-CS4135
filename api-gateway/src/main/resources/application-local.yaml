@@ -9,7 +9,6 @@ spring:
       server:
         webflux:
           routes:
-            # Local dev routes
             - id: user-service
               uri: lb://user-service
               predicates:
@@ -30,6 +29,34 @@ spring:
               predicates:
                 - Path=/api/recommendations/**
 
+            - id: user-service-docs
+              uri: lb://user-service
+              predicates:
+                - Path=/v3/api-docs/user-service
+              filters:
+                - SetPath=/v3/api-docs
+
+            - id: book-service-docs
+              uri: lb://book-service
+              predicates:
+                - Path=/v3/api-docs/book-service
+              filters:
+                - SetPath=/v3/api-docs
+
+            - id: loan-service-docs
+              uri: lb://loan-service
+              predicates:
+                - Path=/v3/api-docs/loan-service
+              filters:
+                - SetPath=/v3/api-docs
+
+            - id: recommendation-service-docs
+              uri: lb://recommendation-service
+              predicates:
+                - Path=/v3/api-docs/recommendation-service
+              filters:
+                - SetPath=/v3/api-docs
+
 server:
   port: 8080
 
@@ -48,11 +75,21 @@ management:
 
 app:
   cors:
-    allowed-origin: ${APP_FRONTEND_ORIGIN} # Replace with the hosted url when that is ready
+    allowed-origin: ${APP_FRONTEND_ORIGIN}
   jwt:
     secret: ${APP_JWT_SECRET}
     issuer: ${APP_JWT_ISSUER:elibrary-user-service}
 
-# Swagger UI:  http://localhost:8080/swagger-ui.html
-# Raw spec:    http://localhost:8080/v3/api-docs
-# Route list:  http://localhost:8080/actuator/gateway/routes
+springdoc:
+  swagger-ui:
+    urls:
+      - name: user-service
+        url: /v3/api-docs/user-service
+      - name: book-service
+        url: /v3/api-docs/book-service
+      - name: loan-service
+        url: /v3/api-docs/loan-service
+      - name: recommendation-service
+        url: /v3/api-docs/recommendation-service
+  api-docs:
+    enabled: true

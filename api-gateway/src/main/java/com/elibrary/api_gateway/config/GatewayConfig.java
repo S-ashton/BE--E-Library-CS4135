@@ -27,7 +27,8 @@ public class GatewayConfig {
 
     private static final List<String> PUBLIC_PATH_PREFIXES = List.of(
             "/api/auth/",
-            "/actuator/",
+            "/actuator/health",
+            "/actuator/info",
             "/swagger-ui/",
             "/v3/api-docs");
 
@@ -91,7 +92,6 @@ public class GatewayConfig {
         }
 
         return path.equals("/api/auth")
-                || path.equals("/actuator")
                 || path.equals("/swagger-ui.html")
                 || PUBLIC_PATH_PREFIXES.stream().anyMatch(path::startsWith);
     }

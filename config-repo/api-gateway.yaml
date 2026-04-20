@@ -65,6 +65,34 @@ spring:
                     name: recommendation-service
                     fallbackUri: forward:/fallback
 
+            - id: user-service-docs
+              uri: lb://user-service
+              predicates:
+                - Path=/v3/api-docs/user-service
+              filters:
+                - SetPath=/v3/api-docs
+
+            - id: book-service-docs
+              uri: lb://book-service
+              predicates:
+                - Path=/v3/api-docs/book-service
+              filters:
+                - SetPath=/v3/api-docs
+
+            - id: loan-service-docs
+              uri: lb://loan-service
+              predicates:
+                - Path=/v3/api-docs/loan-service
+              filters:
+                - SetPath=/v3/api-docs
+
+            - id: recommendation-service-docs
+              uri: lb://recommendation-service
+              predicates:
+                - Path=/v3/api-docs/recommendation-service
+              filters:
+                - SetPath=/v3/api-docs
+
 eureka:
   client:
     service-url:
@@ -77,7 +105,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway
+        include: health,info
 
 app:
   cors:
@@ -117,3 +145,17 @@ resilience4j:
         permitted-number-of-calls-in-half-open-state: 5
         slow-call-duration-threshold: 10s
         slow-call-rate-threshold: 80
+
+springdoc:
+  swagger-ui:
+    urls:
+      - name: user-service
+        url: /v3/api-docs/user-service
+      - name: book-service
+        url: /v3/api-docs/book-service
+      - name: loan-service
+        url: /v3/api-docs/loan-service
+      - name: recommendation-service
+        url: /v3/api-docs/recommendation-service
+  api-docs:
+    enabled: true

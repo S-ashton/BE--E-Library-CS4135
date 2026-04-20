@@ -1,6 +1,5 @@
 package com.elibrary.user_service.dto;
 
-import com.elibrary.user_service.model.Role;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
@@ -28,16 +27,11 @@ public class RegisterRequest {
     )
     private String password;
 
-    @Schema(description = "Role to assign — defaults to USER if omitted", example = "USER", allowableValues = {"USER", "STAFF", "ADMIN"})
-    // Defaults to USER, role is optional in the request body
-    private Role role = Role.USER;
-
     public RegisterRequest() {}
 
-    public RegisterRequest(String email, String password, Role role) {
+    public RegisterRequest(String email, String password) {
         this.email = email;
         this.password = password;
-        this.role = role;
     }
 
     public String getEmail() {
@@ -54,13 +48,5 @@ public class RegisterRequest {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
     }
 }
