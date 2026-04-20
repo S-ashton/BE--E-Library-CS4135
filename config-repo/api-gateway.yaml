@@ -13,7 +13,7 @@ spring:
             cors-configurations:
               '[/**]':
                 allowed-origins:
-                  - ${APP_FRONTEND_ORIGIN:http://localhost:5173}
+                  - ${APP_FRONTEND_ORIGIN:http://localhost:3000}
                 allowed-methods:
                   - GET
                   - POST
@@ -81,7 +81,7 @@ management:
 
 app:
   cors:
-    allowed-origin: ${APP_FRONTEND_ORIGIN:http://localhost:5173}
+    allowed-origin: ${APP_FRONTEND_ORIGIN:http://localhost:3000}
   jwt:
     secret: ${APP_JWT_SECRET:dev-only-jwt-secret-do-not-use-in-production-must-be-at-least-256-bits}
     issuer: ${APP_JWT_ISSUER:elibrary-user-service}

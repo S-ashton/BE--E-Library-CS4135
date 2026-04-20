@@ -95,13 +95,13 @@ class ApiGatewayApplicationTests {
 	void allowedOriginPreflightSucceeds() {
 		webTestClient.options()
 				.uri(gatewayUrl("/api/books/test"))
-				.header("Origin", "http://localhost:5173")
+				.header("Origin", "http://localhost:3000")
 				.header("Access-Control-Request-Method", "GET")
 				.exchange()
 				.expectStatus()
 				.isOk()
 				.expectHeader()
-				.valueEquals("Access-Control-Allow-Origin", "http://localhost:5173");
+				.valueEquals("Access-Control-Allow-Origin", "http://localhost:3000");
 	}
 
 	@Test
