@@ -55,4 +55,10 @@ class SimilarityCalculatorTest {
 
         assertEquals(0.0, sim, 1e-6);
     }
+
+    @Test
+    void testNullInputThrows() {
+        assertThrows(IllegalArgumentException.class, () -> calc.cosineSimilarity(null, new float[]{1f}));
+        assertThrows(IllegalArgumentException.class, () -> calc.cosineSimilarity(new float[]{1f}, null));
+    }
 }

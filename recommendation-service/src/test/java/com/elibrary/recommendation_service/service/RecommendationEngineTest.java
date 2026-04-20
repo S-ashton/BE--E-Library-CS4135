@@ -2,7 +2,6 @@ package com.elibrary.recommendation_service.service;
 
 import com.elibrary.recommendation_service.embedding.BookEmbeddingCache;
 import com.elibrary.recommendation_service.embedding.EmbeddingClient;
-import com.elibrary.recommendation_service.model.Book;
 import com.elibrary.recommendation_service.model.Recommendation;
 import com.elibrary.recommendation_service.similarity.SimilarityCalculator;
 import com.elibrary.recommendation_service.filtering.CollaborativeFilteringService;
@@ -40,48 +39,35 @@ class RecommendationEngineTest {
     @Test
     void usesHybridScoring() {
 
-        // Mock books.json
         when(storage.load(eq("data/books.json"), eq(List.class)))
                 .thenReturn(List.of(
-                        Map.of("id", 1, "title", "Magic", "description", "magic story"),
-                        Map.of("id", 2, "title", "Science", "description", "science story")
+                        Map.of("id", 1, "title", "Magic",   "description", "magic story"),
+                        Map.of("id", 2, "title", "Fantasy", "description", "fantasy story"),
+                        Map.of("id", 3, "title", "Science", "description", "science story")
                 ));
 
-        // Mock loans.json
         when(storage.load(eq("data/loans.json"), eq(Map.class)))
                 .thenReturn(Map.of("user1", List.of("1")));
 
-        // Expected Book instances
-        Book magic = new Book(1L, "Magic", "magic story");
-        Book science = new Book(2L, "Science", "science story");
-
-        // Embeddings
-        float[] embMagic = new float[]{1f, 0f};
+        float[] embMagic   = new float[]{1f, 0f};
+        float[] embFantasy = new float[]{1f, 0f};
         float[] embScience = new float[]{0f, 1f};
 
-        // Null‑safe matchers
-        when(embeddingCache.getEmbedding(argThat(b -> b != null && b.getId() == 1L)))
-                .thenReturn(embMagic);
+        when(embeddingCache.getEmbedding(argThat(b -> b != null && b.getId() == 1L))).thenReturn(embMagic);
+        when(embeddingCache.getEmbedding(argThat(b -> b != null && b.getId() == 2L))).thenReturn(embFantasy);
+        when(embeddingCache.getEmbedding(argThat(b -> b != null && b.getId() == 3L))).thenReturn(embScience);
 
-        when(embeddingCache.getEmbedding(argThat(b -> b != null && b.getId() == 2L)))
-                .thenReturn(embScience);
-
-        // User embedding is built from book 1
-        when(embeddingCache.getEmbedding(argThat(b -> b != null && b.getId() == 1L)))
-                .thenReturn(embMagic);
-
-        // Content similarity
-        when(similarityCalculator.cosineSimilarity(embMagic, embMagic)).thenReturn(1.0);
+        when(similarityCalculator.cosineSimilarity(embMagic, embFantasy)).thenReturn(1.0);
         when(similarityCalculator.cosineSimilarity(embMagic, embScience)).thenReturn(0.0);
 
-        // CF score: book 2 gets a boost
         when(cfService.computeScores(eq("user1"), any()))
-                .thenReturn(Map.of(2L, 0.5));
+                .thenReturn(Map.of(3L, 0.5));
 
         List<Recommendation> recs = engine.recommend("user1", 10);
 
-        assertEquals(1L, recs.get(0).getBookId()); // Magic first
-        assertEquals(2L, recs.get(1).getBookId()); // Science second
+        assertEquals(2, recs.size());
+        assertEquals(2L, recs.get(0).getBookId());
+        assertEquals(3L, recs.get(1).getBookId());
     }
 
     @Test
