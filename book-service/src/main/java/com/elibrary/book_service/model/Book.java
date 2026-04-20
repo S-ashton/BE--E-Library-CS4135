@@ -50,9 +50,12 @@ public class Book {
     private Languages language;
 
     @Column(nullable = false)
+    @Field(type = FieldType.Integer)
     private int copiesAvailable;
 
-
+    @Column(nullable = false)
+    @Field(type = FieldType.Integer)
+    private int totalCopies;
 
 
     protected Book() {}
@@ -66,6 +69,7 @@ public class Book {
         this.coverImageUrl = coverImageUrl;
         this.language = language;
         this.copiesAvailable = 1;
+        this.totalCopies = 1;
     }
 
     public Book(String title, String author, String description, int yearPublished, Genre genre, String coverImageUrl, Languages language, int copiesAvailable) {
@@ -77,6 +81,7 @@ public class Book {
         this.coverImageUrl = coverImageUrl;
         this.language = language;
         this.copiesAvailable = copiesAvailable;
+        this.totalCopies = copiesAvailable;
     }
 
     public Long getId() {
@@ -147,6 +152,14 @@ public class Book {
         this.copiesAvailable = numCopies;
     }
 
+    public int getTotalCopies() {
+        return totalCopies;
+    }
+
+    public void setTotalCopies(int totalCopies) {
+        this.totalCopies = totalCopies;
+    }
+
     public TitleResponseDTO toDto() {
         return new TitleResponseDTO(
                 this.id,
@@ -157,7 +170,8 @@ public class Book {
                 this.genre,
                 this.coverImageUrl,
                 this.language,
-                this.copiesAvailable
+                this.copiesAvailable,
+                this.totalCopies
         );
     }
 }

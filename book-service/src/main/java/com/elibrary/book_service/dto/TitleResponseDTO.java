@@ -42,6 +42,9 @@ public class TitleResponseDTO {
     @Schema(description = "The current number of copies of this book that are available", example = "3")
     private int copiesAvailable;
 
+    @Schema(description = "The total number of copies of this book in the library", example = "3")
+    private int totalCopies;
+
     public TitleResponseDTO() {}
 
     public TitleResponseDTO(
@@ -64,6 +67,31 @@ public class TitleResponseDTO {
         this.coverImageUrl = coverImageUrl;
         this.language = language;
         this.copiesAvailable = copiesAvailable;
+        this.totalCopies = copiesAvailable;
+    }
+
+    public TitleResponseDTO(
+            Long id,
+            String title,
+            String author,
+            String description,
+            int yearPublished,
+            Genre genre,
+            String coverImageUrl,
+            Languages language,
+            int copiesAvailable,
+            int totalCopies
+    ) {
+        this.id = id;
+        this.title = title;
+        this.author = author;
+        this.description = description;
+        this.yearPublished = yearPublished;
+        this.genre = genre;
+        this.coverImageUrl = coverImageUrl;
+        this.language = language;
+        this.copiesAvailable = copiesAvailable;
+        this.totalCopies = totalCopies;
     }
 
     public TitleResponseDTO(
@@ -157,5 +185,13 @@ public class TitleResponseDTO {
 
     public void setCopiesAvailable(int copiesAvailable) {
         this.copiesAvailable = copiesAvailable;
+    }
+
+    public int getTotalCopies() {
+        return totalCopies;
+    }
+
+    public void setTotalCopies(int totalCopies) {
+        this.totalCopies = totalCopies;
     }
 }
