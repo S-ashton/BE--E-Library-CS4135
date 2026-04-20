@@ -157,6 +157,7 @@ services:
       APP_JWT_SECRET: ${APP_JWT_SECRET:-default-dev-jwt-secret-change-in-production-must-be-at-least-256-bits-long-for-hmac-sha}
       APP_JWT_ISSUER: ${APP_JWT_ISSUER:-elibrary-user-service}
       APP_JWT_EXPIRATION_SECONDS: ${APP_JWT_EXPIRATION_SECONDS:-3600}
+      APP_JWT_REFRESH_COOKIE_SAME_SITE: ${APP_JWT_REFRESH_COOKIE_SAME_SITE:-None}
       DB_USERNAME: ${DB_USERNAME:-elibrary}
       DB_PASSWORD: ${DB_PASSWORD:-elibrary-dev-password}
       RABBITMQ_HOST: rabbitmq
