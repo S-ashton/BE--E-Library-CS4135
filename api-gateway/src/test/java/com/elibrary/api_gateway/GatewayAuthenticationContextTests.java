@@ -140,8 +140,13 @@ class GatewayAuthenticationContextTests {
     @Test
     void alteredJwtIsRejected() {
         String validToken = buildValidToken("reader@elibrary.ie", "USER", 42L);
-        String alteredToken = validToken.substring(0, validToken.length() - 1)
-                + (validToken.endsWith("a") ? "b" : "a");
+        String[] parts = validToken.split("\\.");
+        String sig = parts[2];
+        int alterIdx = sig.length() / 2;
+        char original = sig.charAt(alterIdx);
+        char replacement = (original == 'A') ? 'B' : 'A';
+        String alteredToken = parts[0] + "." + parts[1] + "."
+                + sig.substring(0, alterIdx) + replacement + sig.substring(alterIdx + 1);
 
         webTestClient.get()
                 .uri("/api/books/echo-auth")
