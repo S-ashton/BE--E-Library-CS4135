@@ -42,6 +42,7 @@ public class SecurityConfig {
                 .accessDeniedHandler(accessDeniedHandler)
             )
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/users/me").hasAnyRole("USER", "STAFF", "ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/users/me").hasAnyRole("USER", "STAFF", "ADMIN")
@@ -50,7 +51,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/users/**").hasRole("ADMIN")
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                .anyRequest().permitAll()
+                .anyRequest().denyAll()
             )
             .addFilterBefore(gatewayIdentityAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

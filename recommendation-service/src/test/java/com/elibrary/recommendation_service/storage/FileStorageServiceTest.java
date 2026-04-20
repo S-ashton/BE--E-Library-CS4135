@@ -14,11 +14,19 @@ class FileStorageServiceTest {
 
         List<String> data = List.of("A", "B", "C");
 
-        storage.save("test.json", data);
+        storage.save("data/test.json", data);
 
-        List loaded = storage.load("test.json", List.class);
+        List loaded = storage.load("data/test.json", List.class);
 
         assertEquals(data, loaded);
+    }
+
+    @Test
+    void rejectsPathOutsideDataDirectory() {
+        FileStorageService storage = new FileStorageService();
+
+        assertThrows(SecurityException.class, () -> storage.save("../secret.json", "payload"));
+        assertThrows(SecurityException.class, () -> storage.load("../../etc/passwd", String.class));
     }
 }
 

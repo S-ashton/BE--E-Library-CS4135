@@ -127,7 +127,12 @@ public class BookService {
                 .map(List::size)
                 .orElse(0);
 
+        int totalCount = copyRepository.findByBookId(bookId)
+                .map(List::size)
+                .orElse(0);
+
         book.setCopiesAvailable(availableCount);
+        book.setTotalCopies(totalCount);
         bookRepository.save(book);
         esRepository.save(book);
 

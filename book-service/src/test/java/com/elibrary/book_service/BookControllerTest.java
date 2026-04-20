@@ -35,6 +35,7 @@ import com.elibrary.book_service.model.Book;
 import com.elibrary.book_service.model.Genre;
 import com.elibrary.book_service.model.Languages;
 import com.elibrary.book_service.model.Status;
+import com.elibrary.book_service.repository.elasticsearch.ElasticsearchRepo;
 import com.elibrary.book_service.repository.jpa.*;
 import com.elibrary.book_service.service.BookService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -56,6 +57,9 @@ public class BookControllerTest {
 
     @MockBean
     private TitleRepository titleRepository;
+
+    @MockBean
+    private ElasticsearchRepo elasticsearchRepo;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -194,7 +198,7 @@ MockMultipartFile coverImage =
         createBook("Book Title", "Jonah J Jameson", "This is a book", 2026, Genre.NONFICTION, "URL", Languages.ENGLISH);
         
         TitleResponseDTO response = new TitleResponseDTO(
-            1L, "Book Title", "Jonah J Jameson", "This is a book", 2026, Genre.NONFICTION, "URL", Languages.ENGLISH
+            1L, "Book Title", "Jonah J Jameson", "This is a book", 2026, Genre.NONFICTION, "URL", Languages.ENGLISH, 1
         );
 
         

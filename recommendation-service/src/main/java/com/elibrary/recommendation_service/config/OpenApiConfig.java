@@ -19,7 +19,8 @@ public class OpenApiConfig {
                         .description("Generates hybrid book recommendations for the E‑Library system.")
                         .version("v1"))
                 .servers(List.of(
-                        new Server().url("http://localhost:8084").description("Local development")
+                        new Server().url("http://localhost:8080").description("Local via API Gateway"),
+                        new Server().url("http://localhost:8084").description("Local direct")
                 ));
     }
 }

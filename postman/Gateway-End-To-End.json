@@ -6,6 +6,7 @@
   },
   "variable": [
     { "key": "gatewayUrl",   "value": "http://localhost:8080", "type": "string" },
+    { "key": "corsOrigin",   "value": "http://localhost:3000", "type": "string" },
     { "key": "testPassword", "value": "Test@12345", "type": "string" },
     { "key": "userToken",    "value": "", "type": "string" },
     { "key": "adminToken",   "value": "", "type": "string" }
@@ -21,7 +22,7 @@
             "method": "POST",
             "url": { "raw": "{{gatewayUrl}}/api/auth/register", "host": ["{{gatewayUrl}}"], "path": ["api","auth","register"] },
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"email\": \"gw-e2e-user@elibrary.ie\",\n  \"password\": \"{{testPassword}}\",\n  \"role\": \"USER\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"gw-e2e-user@elibrary.ie\",\n  \"password\": \"{{testPassword}}\"\n}" }
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "pm.test('USER account ready (201 or 409)', function () {",
@@ -35,7 +36,7 @@
             "method": "POST",
             "url": { "raw": "{{gatewayUrl}}/api/auth/register", "host": ["{{gatewayUrl}}"], "path": ["api","auth","register"] },
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"email\": \"gw-e2e-admin@elibrary.ie\",\n  \"password\": \"{{testPassword}}\",\n  \"role\": \"ADMIN\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"gw-e2e-admin@elibrary.ie\",\n  \"password\": \"{{testPassword}}\"\n}" }
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "pm.test('ADMIN account ready (201 or 409)', function () {",
@@ -93,31 +94,14 @@
           ]}}]
         },
         {
-          "name": "Actuator gateway routes accessible without JWT",
+          "name": "Actuator gateway routes blocked (security hardening)",
           "request": {
             "method": "GET",
             "url": { "raw": "{{gatewayUrl}}/actuator/gateway/routes", "host": ["{{gatewayUrl}}"], "path": ["actuator","gateway","routes"] },
             "header": []
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('/actuator/gateway/routes returns 200 without JWT', function () { pm.response.to.have.status(200); });",
-            "const body = pm.response.json();",
-            "pm.test('Routes response is an array', function () { pm.expect(body).to.be.an('array'); });",
-            "pm.test('All 4 service routes are registered', function () {",
-            "    pm.expect(body.length).to.be.at.least(4);",
-            "});",
-            "pm.test('user-service route is present', function () {",
-            "    pm.expect(body.some(r => r.route_id === 'user-service')).to.be.true;",
-            "});",
-            "pm.test('book-service route is present', function () {",
-            "    pm.expect(body.some(r => r.route_id === 'book-service')).to.be.true;",
-            "});",
-            "pm.test('loan-service route is present', function () {",
-            "    pm.expect(body.some(r => r.route_id === 'loan-service')).to.be.true;",
-            "});",
-            "pm.test('recommendation-service route is present', function () {",
-            "    pm.expect(body.some(r => r.route_id === 'recommendation-service')).to.be.true;",
-            "});"
+            "pm.test('/actuator/gateway/routes is not exposed (404) — route table is not public', function () { pm.response.to.have.status(404); });"
           ]}}]
         },
         {
@@ -140,7 +124,7 @@
             "method": "POST",
             "url": { "raw": "{{gatewayUrl}}/api/auth/register", "host": ["{{gatewayUrl}}"], "path": ["api","auth","register"] },
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"email\": \"gw-public-test@elibrary.ie\",\n  \"password\": \"{{testPassword}}\",\n  \"role\": \"USER\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"gw-public-test@elibrary.ie\",\n  \"password\": \"{{testPassword}}\"\n}" }
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "pm.test('Auth register passes gateway without JWT (201 or 409)', function () {",
@@ -520,7 +504,7 @@
             "method": "OPTIONS",
             "url": { "raw": "{{gatewayUrl}}/api/users/me", "host": ["{{gatewayUrl}}"], "path": ["api","users","me"] },
             "header": [
-              { "key": "Origin",                         "value": "http://localhost:3000" },
+              { "key": "Origin",                         "value": "{{corsOrigin}}" },
               { "key": "Access-Control-Request-Method",  "value": "GET" },
               { "key": "Access-Control-Request-Headers", "value": "Authorization" }
             ]
@@ -532,7 +516,7 @@
             "pm.test('CORS Allow-Origin header present', function () {",
             "    const acao = pm.response.headers.get('Access-Control-Allow-Origin');",
             "    pm.expect(acao).to.not.be.null;",
-            "    pm.expect(acao).to.equal('http://localhost:3000');",
+            "    pm.expect(acao).to.equal(pm.collectionVariables.get('corsOrigin'));",
             "});",
             "pm.test('CORS Allow-Methods header present', function () {",
             "    pm.expect(pm.response.headers.get('Access-Control-Allow-Methods')).to.not.be.null;",
@@ -548,7 +532,7 @@
             "method": "OPTIONS",
             "url": { "raw": "{{gatewayUrl}}/api/auth/login", "host": ["{{gatewayUrl}}"], "path": ["api","auth","login"] },
             "header": [
-              { "key": "Origin",                         "value": "http://localhost:3000" },
+              { "key": "Origin",                         "value": "{{corsOrigin}}" },
               { "key": "Access-Control-Request-Method",  "value": "POST" },
               { "key": "Access-Control-Request-Headers", "value": "Content-Type" }
             ]
