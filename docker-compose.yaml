@@ -29,6 +29,7 @@ services:
       - ./config-repo:/config-repo:ro
     environment:
       SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS: file:/config-repo
+      APP_FRONTEND_ORIGIN: ${APP_FRONTEND_ORIGIN:-http://localhost:3000}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8888/actuator/health || exit 1"]
       interval: 10s
