@@ -194,7 +194,7 @@ MockMultipartFile coverImage =
         createBook("Book Title", "Jonah J Jameson", "This is a book", 2026, Genre.NONFICTION, "URL", Languages.ENGLISH);
         
         TitleResponseDTO response = new TitleResponseDTO(
-            1L, "Book Title", "Jonah J Jameson", "This is a book", 2026, Genre.NONFICTION, "URL", Languages.ENGLISH
+            1L, "Book Title", "Jonah J Jameson", "This is a book", 2026, Genre.NONFICTION, "URL", Languages.ENGLISH, 1
         );
 
         
