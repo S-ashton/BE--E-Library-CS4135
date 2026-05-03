@@ -1,4 +1,10 @@
-# E-Library - CS4135
+# E-Library Backend - CS4135
+
+![API Gateway Tests](https://github.com/S-ashton/BE--E-Library-CS4135/actions/workflows/api-gateway-test.yaml/badge.svg)
+![Book Service Tests](https://github.com/S-ashton/BE--E-Library-CS4135/actions/workflows/book-service-test.yaml/badge.svg)
+![Loan Service Tests](https://github.com/S-ashton/BE--E-Library-CS4135/actions/workflows/loan-service-test.yaml/badge.svg)
+![Recommendation Service Tests](https://github.com/S-ashton/BE--E-Library-CS4135/actions/workflows/recommendation-service-test.yaml/badge.svg)
+![User Service Tests](https://github.com/S-ashton/BE--E-Library-CS4135/actions/workflows/user-service-test.yaml/badge.svg)
 
 A microservices-based digital library system allowing students and staff to browse, borrow, and manage books and academic resources.
 
@@ -9,6 +15,26 @@ A microservices-based digital library system allowing students and staff to brow
 - Sohaila Awaga (22367543)
 - Oleksandr Kardash (22310975)
 - Sophie Ashton (22353313)
+
+---
+
+## Architecture Diagram
+
+```mermaid
+graph TD
+    FE[Frontend] --> GW[API Gateway]
+    GW --> USER[User Service]
+    GW --> BOOK[Book Service]
+    GW --> LOAN[Loan Service]
+    GW --> REC[Recommendation Service]
+    LOAN --> RABBIT[RabbitMQ]
+    REC --> RABBIT
+    BOOK --> ES[Elasticsearch]
+    USER --> DB[(PostgreSQL)]
+    BOOK --> DB
+    LOAN --> DB
+    REC --> DB
+```
 
 ---
 
