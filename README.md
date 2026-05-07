@@ -58,7 +58,8 @@ Infrastructure: **PostgreSQL**, **Elasticsearch**, **RabbitMQ**, **MinIO**.
 ## Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (with Compose v2)
-- Java 21 + Maven (only needed if running services outside Docker)
+- Java 21 (only needed if running services outside Docker)
+- Maven is not required for wrapper-based commands. Each Java service includes Maven Wrapper scripts, so you can run `./mvnw` or `mvnw.cmd` without installing system Maven.
 
 ---
 
@@ -109,14 +110,15 @@ For email notifications (loan confirmations), set `SENDGRID_API_KEY`, `SENDGRID_
 
 ## Running a Single Service Outside Docker (IDE / Hot Reload)
 
-Start only the infrastructure, then run the service locally with the `local` Spring profile, which connects to `localhost` ports:
+Start only the infrastructure, then run the service locally with the `local` Spring profile, which connects to `localhost` ports. Run the wrapper from the service directory:
 
 ```bash
 # 1. Start infrastructure
 docker compose up postgres elasticsearch rabbitmq minio config-server discovery-server -d
 
 # 2. Run a service (example: book-service)
-./mvnw spring-boot:run -pl book-service -Dspring-boot.run.profiles=local
+cd book-service
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 ---
