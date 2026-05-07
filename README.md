@@ -1,4 +1,10 @@
-# E-Library - CS4135
+# E-Library Backend - CS4135
+
+![API Gateway Tests](https://github.com/S-ashton/BE--E-Library-CS4135/actions/workflows/api-gateway-test.yaml/badge.svg)
+![Book Service Tests](https://github.com/S-ashton/BE--E-Library-CS4135/actions/workflows/book-service-test.yaml/badge.svg)
+![Loan Service Tests](https://github.com/S-ashton/BE--E-Library-CS4135/actions/workflows/loan-service-test.yaml/badge.svg)
+![Recommendation Service Tests](https://github.com/S-ashton/BE--E-Library-CS4135/actions/workflows/recommendation-service-test.yaml/badge.svg)
+![User Service Tests](https://github.com/S-ashton/BE--E-Library-CS4135/actions/workflows/user-service-test.yaml/badge.svg)
 
 A microservices-based digital library system allowing students and staff to browse, borrow, and manage books and academic resources.
 
@@ -9,6 +15,26 @@ A microservices-based digital library system allowing students and staff to brow
 - Sohaila Awaga (22367543)
 - Oleksandr Kardash (22310975)
 - Sophie Ashton (22353313)
+
+---
+
+## Architecture Diagram
+
+```mermaid
+graph TD
+    FE[Frontend] --> GW[API Gateway]
+    GW --> USER[User Service]
+    GW --> BOOK[Book Service]
+    GW --> LOAN[Loan Service]
+    GW --> REC[Recommendation Service]
+    LOAN --> RABBIT[RabbitMQ]
+    REC --> RABBIT
+    BOOK --> ES[Elasticsearch]
+    USER --> DB[(PostgreSQL)]
+    BOOK --> DB
+    LOAN --> DB
+    REC --> DB
+```
 
 ---
 
@@ -32,7 +58,8 @@ Infrastructure: **PostgreSQL**, **Elasticsearch**, **RabbitMQ**, **MinIO**.
 ## Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (with Compose v2)
-- Java 21 + Maven (only needed if running services outside Docker)
+- Java 21 (only needed if running services outside Docker)
+- Maven is not required for wrapper-based commands. Each Java service includes Maven Wrapper scripts, so you can run `./mvnw` or `mvnw.cmd` without installing system Maven.
 
 ---
 
@@ -73,22 +100,25 @@ All services have sensible defaults for local development — no `.env` file is 
 | `DB_USERNAME` / `DB_PASSWORD` | `elibrary` / `elibrary-dev-password` |
 | `RABBITMQ_USERNAME` / `RABBITMQ_PASSWORD` | `elibrary` / `elibrary-dev-password` |
 | `MINIO_USER` / `MINIO_PASSWORD` | `elibrary` / `elibrary-dev-password` |
-| `APP_JWT_SECRET` | a long dev secret (auto-set) |
+| `JWT_SHARED_SECRET` | shared dev JWT secret injected into services as `APP_JWT_SECRET` |
 
 For email notifications (loan confirmations), set `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL` in a `.env` file — these are optional and the service will still start without them.
+
+> Warning: the default JWT secret is for local development only. Override `JWT_SHARED_SECRET` in `.env` or your deployment environment before running in production.
 
 ---
 
 ## Running a Single Service Outside Docker (IDE / Hot Reload)
 
-Start only the infrastructure, then run the service locally with the `local` Spring profile, which connects to `localhost` ports:
+Start only the infrastructure, then run the service locally with the `local` Spring profile, which connects to `localhost` ports. Run the wrapper from the service directory:
 
 ```bash
 # 1. Start infrastructure
 docker compose up postgres elasticsearch rabbitmq minio config-server discovery-server -d
 
 # 2. Run a service (example: book-service)
-./mvnw spring-boot:run -pl book-service -Dspring-boot.run.profiles=local
+cd book-service
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 ---
