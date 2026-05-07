@@ -99,9 +99,11 @@ All services have sensible defaults for local development — no `.env` file is 
 | `DB_USERNAME` / `DB_PASSWORD` | `elibrary` / `elibrary-dev-password` |
 | `RABBITMQ_USERNAME` / `RABBITMQ_PASSWORD` | `elibrary` / `elibrary-dev-password` |
 | `MINIO_USER` / `MINIO_PASSWORD` | `elibrary` / `elibrary-dev-password` |
-| `APP_JWT_SECRET` | a long dev secret (auto-set) |
+| `JWT_SHARED_SECRET` | shared dev JWT secret injected into services as `APP_JWT_SECRET` |
 
 For email notifications (loan confirmations), set `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL` in a `.env` file — these are optional and the service will still start without them.
+
+> Warning: the default JWT secret is for local development only. Override `JWT_SHARED_SECRET` in `.env` or your deployment environment before running in production.
 
 ---
 
