@@ -73,7 +73,7 @@ services:
       - data
 
   traefik:
-    image: traefik:latest
+    image: traefik:v3.6.13
     container_name: traefik
     restart: unless-stopped
     environment:
@@ -127,7 +127,7 @@ services:
     environment:
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
-      APP_JWT_SECRET: ${APP_JWT_SECRET:-default-dev-jwt-secret-change-in-production-must-be-at-least-256-bits-long-for-hmac-sha}
+      APP_JWT_SECRET: ${JWT_SHARED_SECRET:-default-dev-jwt-secret-change-in-production-must-be-at-least-256-bits-long-for-hmac-sha}
       APP_JWT_ISSUER: ${APP_JWT_ISSUER:-elibrary-user-service}
       APP_FRONTEND_ORIGIN: ${APP_FRONTEND_ORIGIN:-http://localhost:3000}
     depends_on:
@@ -155,7 +155,7 @@ services:
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
       SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
-      APP_JWT_SECRET: ${APP_JWT_SECRET:-default-dev-jwt-secret-change-in-production-must-be-at-least-256-bits-long-for-hmac-sha}
+      APP_JWT_SECRET: ${JWT_SHARED_SECRET:-default-dev-jwt-secret-change-in-production-must-be-at-least-256-bits-long-for-hmac-sha}
       APP_JWT_ISSUER: ${APP_JWT_ISSUER:-elibrary-user-service}
       APP_JWT_EXPIRATION_SECONDS: ${APP_JWT_EXPIRATION_SECONDS:-3600}
       APP_JWT_REFRESH_COOKIE_SAME_SITE: ${APP_JWT_REFRESH_COOKIE_SAME_SITE:-None}
@@ -340,7 +340,7 @@ services:
       - data
 
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
